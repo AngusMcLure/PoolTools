@@ -1,51 +1,46 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
+  titlePanel("PoolTools"),
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
-    )
+  ## Main navbar and pages
+  navbarPage("Navigation", id = "main_nav",
+             tabPanel("Home",
+                      wellPanel(
+                        h4("Select:"),
+                        actionButton("btn_help", "Help (Documentation)"),
+                        actionButton("btn_analyse", "Analyse pooled data"),
+                        actionButton("btn_design", "Design a pooled survey")
+                      )
+             ),
+             tabPanel("Documentation",
+                      h3("Documentation")
+             ),
+             tabPanel("Analyse",
+                      h3("Analyse pooled data"),
+                      fileInput("file_analyse", "Choose CSV File")
+             ),
+             tabPanel("Design",
+                      h3("Design a pooled survey")
+             )
+  )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
 
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+  ## Home page buttons
+  observeEvent(input$btn_help, {
+    updateTabsetPanel(session, "main_nav", selected = "Documentation")
+  })
 
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+  observeEvent(input$btn_analyse, {
+    updateTabsetPanel(session, "main_nav", selected = "Analyse")
+  })
+
+  observeEvent(input$btn_design, {
+    updateTabsetPanel(session, "main_nav", selected = "Design")
+  })
+
 }
 
-# Run the application 
 shinyApp(ui = ui, server = server)
