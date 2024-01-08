@@ -17,13 +17,22 @@ ui <- fluidPage(
 
 
              tabPanel("Documentation",
-                      h2("Documentation")
+                      h2("Documentation"),
+                      h3("About PoolTools"),
+                      h3("How to cite"),
+                      h3("Relevant papers"),
+                      h3("Contact"),
+                      h3("Credits and acknowledgements"),
+
              ),
 
 
              tabPanel("Analyse",
                       h2("Analyse pooled data"),
-                      fileInput("fileAnalyse", "Choose CSV File")
+                      fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
+                      uiOutput("colSelectTestResults"),
+                      uiOutput("colSelectUnitNumber"),
+                      uiOutput("optsSelectStructure")
              ),
 
 
@@ -81,20 +90,18 @@ ui <- fluidPage(
                                            textInput("optsMaxPoolSize",
                                                      "Maximum pool size",
                                                      value = 10),
-                                           selectInput("optsTrappingTime",
-                                                       "Select trapping time",
-                                                       choices = c("Fixed period", "Target sample size"))
-
-
-                                           ## For cluster-specific designs
-
+                                           selectInput("optsTrapping",
+                                                       "Trapping time",
+                                                       choices = c("Fixed period", "Target sample size")),
+                                           #TODO: options for optsTrapping
 
                                          ),
                                          mainPanel(
-                                           h3("Identify cost-effective designs")
+                                           h3("Identify cost-effective designs"),
+                                           p("[display PoolPoweR::optimise_X() output]")
                                          )
                                        ))
-             ),
+             )
 
   )
 )
@@ -112,6 +119,35 @@ server <- function(input, output, session) {
 
   observeEvent(input$btnDesign, {
     updateTabsetPanel(session, "main_nav", selected = "Design")
+  })
+
+
+  ## Analyse: Selecting columns for test result and unit number
+  data <- reactive({
+    req(input$fileAnalyse)
+    read.csv(input$fileAnalyse$datapath, header = TRUE)
+    # Any pre-processing or column checks
+  })
+  output$colSelectTestResults <- renderUI({
+    req(data())
+    selectInput("colTestResults",
+                "Select test results column",
+                choices = names(data()),
+                selected = names(data())[1])
+  })
+  output$colSelectUnitNumber <- renderUI({
+    req(data())
+    selectInput("colUnitNumber",
+                "Select number of units per pool column",
+                choices = names(data()),
+                selected = names(data())[2])
+  })
+  output$optsSelectStructure <- renderUI({
+    req(data())
+    selectInput("optsStructure",
+                "Hierarchical sampling",
+                choices = c("PoolPrev (No adjustment)", "HierPoolPrev", "PoolReg", "PoolRegBayes", "getPrevalence"),
+                selected = "PoolPrev (No adjustment)")
   })
 
 }
