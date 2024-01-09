@@ -7,18 +7,14 @@ ui <- fluidPage(
 
 
              tabPanel("Home",
-                      wellPanel(
-                        h4("Select:"),
-                        actionButton("btnHelp", "Help (Documentation)"),
-                        actionButton("btnAnalyse", "Analyse pooled data"),
-                        actionButton("btnDesign", "Design a pooled survey")
-                      )
+                      actionButton("btnHelp", "Help (Documentation)"),
+                      actionButton("btnAnalyse", "Analyse pooled data"),
+                      actionButton("btnDesign", "Design a pooled survey")
              ),
 
 
-             tabPanel("Documentation",
-                      h2("Documentation"),
-                      h3("About PoolTools"),
+             tabPanel("About",
+                      h2("About PoolTools"),
                       h3("How to cite"),
                       h3("Relevant papers"),
                       h3("Contact"),
@@ -26,9 +22,18 @@ ui <- fluidPage(
 
              ),
 
+             tabPanel("Help",
+                      h2("Documentation"),
+                      h3("How to analyse pooled data"),
+                      h3("How to design a pooled survey")
+             ),
+
 
              tabPanel("Analyse",
                       h2("Analyse pooled data"),
+                      actionButton("btnDocsAnalyse", "See instructions"),
+                      hr(),
+
                       fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
                       uiOutput("colSelectTestResults"),
                       uiOutput("colSelectUnitNumber"),
@@ -38,41 +43,67 @@ ui <- fluidPage(
 
              tabPanel("Design",
                       h2("Design a pooled survey"),
+                      actionButton("btnDocsDesign", "See instructions"),
+                      hr(),
 
-                      ## Select design objective and mode
-                      selectInput("optsObjective",
-                                  "Select objective",
-                                  choices = c("Estimate prevalence", "Detect pathogen")),
-                      selectInput("optsMode",
-                                  "Select mode",
-                                  choices = c("Calculate power", "Optimise cost")),
+                      ## First row of required options
+                      fluidRow(
+                        column(3,
+                               selectInput("optsObjective",
+                                           "Survey objective",
+                                           choices = c("Estimate prevalence", "Detect pathogen"))
+                        ),
+                        column(3,
+                               selectInput("optsMode",
+                                           "Survey mode",
+                                           choices = c("Calculate power", "Optimise cost"))
+                        ),
+                        column(3,
+                               selectInput("optsTrapping",
+                                           "Trapping time",
+                                           choices = c("Fixed period", "Target sample size"))
+                                           # options for optsTrapping
+                        ),
+                        column(3,
+                               checkboxInput("optsClustered",
+                                             "Clustered design",
+                                             value = TRUE)
+                        )
+                      ),
 
-
-                      ## Options shared across all modes
-                      sliderInput("optsSensitivity",
-                                  "Sensitivity",
-                                  min = 0,
-                                  max = 1,
-                                  value = 1),
-                      sliderInput("optsSpecificity",
-                                  "Specificity",
-                                  min = 0,
-                                  max = 1,
-                                  value = 1),
-                      sliderInput("optsPrevalence",
-                                  "Prevalence",
-                                  min = 0,
-                                  max = 1,
-                                  value = 1),
-                      checkboxInput("optsClustered",
-                                    "Clustered design",
-                                    value = TRUE),
-                      conditionalPanel(condition = "input.optsClustered == true",
-                                       sliderInput("optsCorrelation",
-                                                   "Within-cluster correlation",
-                                                   min = 0,
-                                                   max = 1,
-                                                   value = 1)),
+                      ## Second row of required options
+                      fluidRow(
+                        column(3,
+                               sliderInput("optsSensitivity",
+                                           "Sensitivity",
+                                           min = 0,
+                                           max = 1,
+                                           value = 1)
+                        ),
+                        column(3,
+                               sliderInput("optsSpecificity",
+                                           "Specificity",
+                                           min = 0,
+                                           max = 1,
+                                           value = 1)
+                        ),
+                        column(3,
+                               sliderInput("optsPrevalence",
+                                           "Prevalence",
+                                           min = 0,
+                                           max = 1,
+                                           value = 1)
+                        ),
+                        column(3,
+                               conditionalPanel(condition = "input.optsClustered == true",
+                                                sliderInput("optsCorrelation",
+                                                            "Within-cluster correlation",
+                                                            min = 0,
+                                                            max = 1,
+                                                            value = 1)
+                               )
+                        )
+                      ),
 
 
                       ## For identifying cost-effective designs
@@ -90,10 +121,6 @@ ui <- fluidPage(
                                            textInput("optsMaxPoolSize",
                                                      "Maximum pool size",
                                                      value = 10),
-                                           selectInput("optsTrapping",
-                                                       "Trapping time",
-                                                       choices = c("Fixed period", "Target sample size")),
-                                           #TODO: options for optsTrapping
 
                                          ),
                                          mainPanel(
@@ -102,7 +129,6 @@ ui <- fluidPage(
                                          )
                                        ))
              )
-
   )
 )
 
