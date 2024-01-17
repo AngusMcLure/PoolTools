@@ -1,4 +1,7 @@
 library(shiny)
+library(shinyBS)
+library(sortable)
+library(DT)
 
 ui <- fluidPage(
 
@@ -7,25 +10,27 @@ ui <- fluidPage(
 
 
              tabPanel("Home",
-                      actionButton("btnHelp", "Help (Documentation)"),
+                      actionButton("btnHelp", "Documentation"),
                       actionButton("btnAnalyse", "Analyse pooled data"),
                       actionButton("btnDesign", "Design a pooled survey")
              ),
 
 
-             tabPanel("About",
-                      h2("About PoolTools"),
-                      h3("How to cite"),
-                      h3("Relevant papers"),
-                      h3("Contact"),
-                      h3("Credits and acknowledgements"),
+             navbarMenu("Help",
+                        tabPanel("About",
+                                 h2("About PoolTools"),
+                                 h3("How to cite"),
+                                 h3("Relevant papers"),
+                                 h3("Contact"),
+                                 h3("Credits and acknowledgements"),
+                                 ),
 
-             ),
 
-             tabPanel("Help",
-                      h2("Documentation"),
-                      h3("How to analyse pooled data"),
-                      h3("How to design a pooled survey")
+                        tabPanel("Documentation",
+                                 h2("Documentation"),
+                                 h3("How to analyse pooled data"),
+                                 h3("How to design a pooled survey"),
+                                 )
              ),
 
 
@@ -35,9 +40,20 @@ ui <- fluidPage(
                       hr(),
 
                       fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
-                      uiOutput("colSelectTestResults"),
-                      uiOutput("colSelectUnitNumber"),
-                      uiOutput("optsSelectStructure")
+                      sidebarLayout(
+                        sidebarPanel(
+                          uiOutput("colSelectTestResults"),
+                          uiOutput("colSelectUnitNumber"),
+                          uiOutput("optsSelectStructure"),
+                          uiOutput("colSelectStratify"),
+                          uiOutput("colReorderStratify")
+                      ),
+                        mainPanel()
+                      )
+
+
+                      # Analyse tooltips
+
              ),
 
 
@@ -106,8 +122,11 @@ ui <- fluidPage(
                       ),
 
 
+                      ##
                       ## For identifying cost-effective designs
+                      ##
                       conditionalPanel(condition = "input.optsMode == 'Optimise cost'",
+
                                        sidebarLayout(
 
                                          ## Cost-specific options
@@ -121,20 +140,71 @@ ui <- fluidPage(
                                            textInput("optsMaxPoolSize",
                                                      "Maximum pool size",
                                                      value = 10),
+                                           conditionalPanel(condition = "input.optsClustered == true",
+                                                            textInput("optsCostCluster",
+                                                                      "Cost per cluster",
+                                                                      value = 5)
+                                                            )
 
                                          ),
+
                                          mainPanel(
                                            h3("Identify cost-effective designs"),
                                            p("[display PoolPoweR::optimise_X() output]")
                                          )
-                                       ))
+                                         )
+                                       ),
+
+
+                      ##
+                      ## Evaluating existing designs
+                      ##
+                      conditionalPanel(condition = "input.optsMode == 'Calculate power'",
+
+                                       sidebarLayout(
+
+                                         sidebarPanel(
+                                           conditionalPanel("input.optsTrapping == 'Fixed period'",
+                                                            textInput("optsUnitsMean",
+                                                                      "Mean units per cluster"
+                                                                      ),
+                                                            textInput("optsUnitsVar",
+                                                                      "Variance of units"
+                                                                      )
+                                                            ),
+                                           conditionalPanel("input.optsTrapping == 'Target sample size'",
+                                                            textInput("optsPoolSize",
+                                                                      "Number of units per pool"
+                                                                    ),
+                                                            conditionalPanel("input.optsClustered == false",
+                                                                             textInput("optsPoolNum",
+                                                                                       "Number of pools"
+                                                                                       )
+                                                                             ),
+                                                            conditionalPanel("input.optsClustered == true",
+                                                                             textInput("optsPoolNumClust",
+                                                                                       "Number of pools per cluster"
+                                                                                       )
+                                                                             )
+                                                            )
+                                         ),
+
+
+                                         mainPanel()
+                                       ),
+                      )
+
+
+
              )
   )
 )
 
 server <- function(input, output, session) {
 
+  ##
   ## Home page buttons
+  ##
   observeEvent(input$btnHelp, {
     updateTabsetPanel(session, "main_nav", selected = "Documentation")
   })
@@ -147,8 +217,19 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, "main_nav", selected = "Design")
   })
 
+  ##
+  ## Analyse and Design buttons to docs
+  ##
+  observeEvent(input$btnHelp, {
+    updateTabsetPanel(session, "main_nav", selected = "Documentation")
+  })
 
+  observeEvent(input$btnAnalyse, {
+    updateTabsetPanel(session, "main_nav", selected = "Analyse")
+  })
+  ##
   ## Analyse: Selecting columns for test result and unit number
+  ##
   data <- reactive({
     req(input$fileAnalyse)
     read.csv(input$fileAnalyse$datapath, header = TRUE)
@@ -169,11 +250,30 @@ server <- function(input, output, session) {
                 selected = names(data())[2])
   })
   output$optsSelectStructure <- renderUI({
+    # Although the options don't change, reveal only when file is uploaded
     req(data())
     selectInput("optsStructure",
                 "Hierarchical sampling",
                 choices = c("PoolPrev (No adjustment)", "HierPoolPrev", "PoolReg", "PoolRegBayes", "getPrevalence"),
                 selected = "PoolPrev (No adjustment)")
+  })
+  output$colSelectStratify <- renderUI({
+    req(data())
+    # Exclude columns that were selected for test results and unit number
+    metadata_cols <- names(data())
+    metadata_cols <- metadata_cols[!metadata_cols %in% c(input$colTestResults, input$colUnitNumber)]
+    checkboxGroupInput("optsSelectStratify",
+                       "Select columns to stratify",
+                       choices = metadata_cols)
+  })
+  output$colReorderStratify <- renderUI({
+    req(data())
+    # Could replace with bucket_list to avoid colSelectStratify
+    rank_list(
+      text = "Drag the items to reflect hierarchy order (big to small)",
+      input_id = "optsStratify",
+      labels = input$optsSelectStratify
+    )
   })
 
 }
