@@ -94,7 +94,6 @@ ui <- fluidPage(
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
                                              ),
                                            choices = c("Fixed period", "Target sample size"))
-                                           # options for optsTrapping
                         ),
                         column(3,
                                checkboxInput("optsClustered",
@@ -345,9 +344,25 @@ server <- function(input, output, session) {
 
   observeEvent(input$optsAnalyse, {
     req(data(), input$colTestResults, input$colUnitNumber)
+    req_args <- list(
+      data = data(),
+      result = input$colTestResults,
+      poolSize = input$colUnitNumber,
+      bayesian = F
+    )
     if (!input$optsHierarchy) {
-      result(PoolPrev(data(), input$colTestResults, input$colUnitNumber, bayesian = F))
+      if (is.null(input$optsStratify)) {
+      # Estimate prevalence on whole data
+      result(do.call(PoolPrev, req_args))
+      } else {
+        # Estimate prevalence for each selected column
+        # Parse arguments
+        add_args <- c(req_args, lapply(input$optsStratify, as.name))
+        print(input$optsStratify)
+        result(do.call(PoolPrev, add_args))
+      }
     }
+
     #if (input$optsHierarchy) {
     #  result(HierPoolPrev(data(), input$colTestResults, input$colUnitNumber, bayesian = F))
     #}
