@@ -3,6 +3,8 @@ library(shinyBS)
 library(sortable)
 library(DT)
 
+library(PoolTestR)
+
 ui <- fluidPage(
 
   ## Main navbar and pages
@@ -10,6 +12,7 @@ ui <- fluidPage(
 
 
              tabPanel("Home",
+                      p("text to describe each button with some examples"),
                       actionButton("btnHelp", "Documentation"),
                       actionButton("btnAnalyse", "Analyse pooled data"),
                       actionButton("btnDesign", "Design a pooled survey")
@@ -44,16 +47,15 @@ ui <- fluidPage(
                         sidebarPanel(
                           uiOutput("colSelectTestResults"),
                           uiOutput("colSelectUnitNumber"),
-                          uiOutput("optsSelectStructure"),
                           uiOutput("colSelectStratify"),
-                          uiOutput("colReorderStratify")
+                          uiOutput("checkHierarchy"),
+                          uiOutput("colHierarchyOrder"),
+                          uiOutput("btnAnalyse")
                       ),
-                        mainPanel()
+                        mainPanel(
+                          dataTableOutput("conditionalTable")
+                        )
                       )
-
-
-                      # Analyse tooltips
-
              ),
 
 
@@ -62,27 +64,44 @@ ui <- fluidPage(
                       actionButton("btnDocsDesign", "See instructions"),
                       hr(),
 
+
+                      ##
+                      ## Required options
+                      ##
+
                       ## First row of required options
                       fluidRow(
                         column(3,
                                selectInput("optsObjective",
-                                           "Survey objective",
+                                           tags$span(
+                                             "Survey objective",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            choices = c("Estimate prevalence", "Detect pathogen"))
                         ),
                         column(3,
                                selectInput("optsMode",
-                                           "Survey mode",
+                                           tags$span(
+                                             "Survey mode",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            choices = c("Calculate power", "Optimise cost"))
                         ),
                         column(3,
                                selectInput("optsTrapping",
-                                           "Trapping time",
+                                           tags$span(
+                                             "Trapping time",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            choices = c("Fixed period", "Target sample size"))
                                            # options for optsTrapping
                         ),
                         column(3,
                                checkboxInput("optsClustered",
+                                           tags$span(
                                              "Clustered design",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                              value = TRUE)
                         )
                       ),
@@ -91,21 +110,30 @@ ui <- fluidPage(
                       fluidRow(
                         column(3,
                                sliderInput("optsSensitivity",
-                                           "Sensitivity",
+                                           tags$span(
+                                             "Sensitivity",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            min = 0,
                                            max = 1,
                                            value = 1)
                         ),
                         column(3,
                                sliderInput("optsSpecificity",
-                                           "Specificity",
+                                           tags$span(
+                                             "Specificity",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            min = 0,
                                            max = 1,
                                            value = 1)
                         ),
                         column(3,
                                sliderInput("optsPrevalence",
-                                           "Prevalence",
+                                           tags$span(
+                                             "Prevalence",
+                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                             ),
                                            min = 0,
                                            max = 1,
                                            value = 1)
@@ -113,13 +141,20 @@ ui <- fluidPage(
                         column(3,
                                conditionalPanel(condition = "input.optsClustered == true",
                                                 sliderInput("optsCorrelation",
-                                                            "Within-cluster correlation",
+                                                            tags$span(
+                                                              "Within-cluster correlation",
+                                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                                            ),
                                                             min = 0,
                                                             max = 1,
                                                             value = 1)
                                )
                         )
                       ),
+
+
+                      ## Required options tooltips
+                      bsTooltip("optsObjective", "placeholder", "right"),
 
 
                       ##
@@ -235,46 +270,94 @@ server <- function(input, output, session) {
     read.csv(input$fileAnalyse$datapath, header = TRUE)
     # Any pre-processing or column checks
   })
+
+  metadata_cols <- reactive({
+    # All column names that are not the results or unit number per pool
+    req(data())
+    cols <- names(data())
+    cols <- cols[!cols %in% c(input$colTestResults, input$colUnitNumber)]
+  })
+
+
+  ## Options
   output$colSelectTestResults <- renderUI({
     req(data())
     selectInput("colTestResults",
-                "Select test results column",
-                choices = names(data()),
-                selected = names(data())[1])
+                tags$span(
+                  "Test results",
+                  tipify(icon("info-circle"), "Placeholder", placement = "right")
+                  ),
+                choices = c("Select column" = "", names(data()))
+                )
   })
   output$colSelectUnitNumber <- renderUI({
     req(data())
+    cols <- names(data())
+    cols <- cols[!cols %in% input$colTestResults]
     selectInput("colUnitNumber",
-                "Select number of units per pool column",
-                choices = names(data()),
-                selected = names(data())[2])
-  })
-  output$optsSelectStructure <- renderUI({
-    # Although the options don't change, reveal only when file is uploaded
-    req(data())
-    selectInput("optsStructure",
-                "Hierarchical sampling",
-                choices = c("PoolPrev (No adjustment)", "HierPoolPrev", "PoolReg", "PoolRegBayes", "getPrevalence"),
-                selected = "PoolPrev (No adjustment)")
+                tags$span(
+                  "Number of specimens per pool",
+                  tipify(icon("info-circle"), "Placeholder", placement = "right")
+                  ),
+                choices = c("Select column" = "", cols)
+                )
   })
   output$colSelectStratify <- renderUI({
     req(data())
     # Exclude columns that were selected for test results and unit number
-    metadata_cols <- names(data())
-    metadata_cols <- metadata_cols[!metadata_cols %in% c(input$colTestResults, input$colUnitNumber)]
-    checkboxGroupInput("optsSelectStratify",
-                       "Select columns to stratify",
-                       choices = metadata_cols)
+    checkboxGroupInput("optsStratify",
+                       tags$span(
+                       "Estimate prevalence for:",
+                       tipify(icon("info-circle"), "Leave empty to estimate prevalence on the whole data set", placement = "right")
+                       ),
+                       choices = metadata_cols())
   })
-  output$colReorderStratify <- renderUI({
+  output$checkHierarchy <- renderUI({
+    # Although the options don't change, reveal only when file is uploaded
     req(data())
-    # Could replace with bucket_list to avoid colSelectStratify
-    rank_list(
-      text = "Drag the items to reflect hierarchy order (big to small)",
-      input_id = "optsStratify",
-      labels = input$optsSelectStratify
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      checkboxInput("optsHierarchy",
+                    tags$span(
+                      "Adjust for hierarchical sampling?",
+                      tipify(icon("info-circle"), "Placeholder", placement = "right"),
+                      )
+                    )
     )
   })
+  output$colHierarchyOrder <- renderUI({
+    req(data())
+    if (input$optsHierarchy) {
+      rank_list(
+        text = "Hierarchy order",
+        input_id = "optsHierarchyOrder",
+        labels = input$optsStratify
+      )
+    }
+  })
+  output$btnAnalyse <- renderUI({
+    req(data())
+    actionButton("optsAnalyse", "Run!")
+  })
+
+  ## Table output
+  result <- reactiveVal()
+
+  observeEvent(input$optsAnalyse, {
+    req(data(), input$colTestResults, input$colUnitNumber)
+    if (!input$optsHierarchy) {
+      result(PoolPrev(data(), input$colTestResults, input$colUnitNumber, bayesian = F))
+    }
+    #if (input$optsHierarchy) {
+    #  result(HierPoolPrev(data(), input$colTestResults, input$colUnitNumber, bayesian = F))
+    #}
+    else result(NULL)
+  })
+
+  output$conditionalTable <- renderDataTable({
+      req(result())
+      result()
+    })
 
 }
 
