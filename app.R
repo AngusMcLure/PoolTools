@@ -25,14 +25,14 @@ ui <- fluidPage(
                                  h3("How to cite"),
                                  h3("Relevant papers"),
                                  h3("Contact"),
-                                 h3("Credits and acknowledgements"),
+                                 h3("Credits and acknowledgements")
                                  ),
 
 
                         tabPanel("Documentation",
                                  h2("Documentation"),
                                  h3("How to analyse pooled data"),
-                                 h3("How to design a pooled survey"),
+                                 h3("How to design a pooled survey")
                                  )
              ),
 
@@ -225,7 +225,7 @@ ui <- fluidPage(
 
 
                                          mainPanel()
-                                       ),
+                                       )
                       )
 
 
@@ -319,7 +319,7 @@ server <- function(input, output, session) {
       checkboxInput("optsHierarchy",
                     tags$span(
                       "Adjust for hierarchical sampling?",
-                      tipify(icon("info-circle"), "Placeholder", placement = "right"),
+                      tipify(icon("info-circle"), "Placeholder", placement = "right")
                       )
                     )
     )
@@ -336,7 +336,7 @@ server <- function(input, output, session) {
           ),
         add_rank_list(
           text = "Drag here to exclude columns (e.g. Time)",
-          input_id = "_optsHierarchyExclude",
+          input_id = "_optsHierarchyExclude"
         )
       )
     }
@@ -358,6 +358,7 @@ server <- function(input, output, session) {
       bayesian = F
     )
 
+    # Debugging
     print(input$optsHierarchy)
     print(input$optsStratify)
 
@@ -372,8 +373,13 @@ server <- function(input, output, session) {
         result(do.call(PoolPrev, col_args))
       }
     } else if (input$optsHierarchy) {
+      # Account for hierarchical sampling structure
       hier_args <- req_args
       hier_args$hierarchy <- input$optsHierarchyOrder
+      # Parse arguments for stratification
+      if (!is.null(input$optsStratify)) {
+        hier_args <- c(hier_args, lapply(input$optsStratify, as.name))
+      }
       print(hier_args)
       result(do.call(HierPoolPrev, hier_args))
     }
