@@ -327,10 +327,17 @@ server <- function(input, output, session) {
   output$colHierarchyOrder <- renderUI({
     req(data())
     if (input$optsHierarchy) {
-      rank_list(
-        text = "Hierarchy order",
-        input_id = "optsHierarchyOrder",
-        labels = input$optsStratify
+      bucket_list(
+        header = "Hierarchy order",
+        add_rank_list(
+          text = "Drag to reorder by hierarchy",
+          input_id = "optsHierarchyOrder",
+          labels = metadata_cols()
+          ),
+        add_rank_list(
+          text = "Drag here to exclude columns (e.g. Time)",
+          input_id = "_optsHierarchyExclude",
+        )
       )
     }
   })
@@ -350,6 +357,10 @@ server <- function(input, output, session) {
       poolSize = input$colUnitNumber,
       bayesian = F
     )
+
+    print(input$optsHierarchy)
+    print(input$optsStratify)
+
     if (!input$optsHierarchy) {
       if (is.null(input$optsStratify)) {
       # Estimate prevalence on whole data
@@ -357,15 +368,15 @@ server <- function(input, output, session) {
       } else {
         # Estimate prevalence for each selected column
         # Parse arguments
-        add_args <- c(req_args, lapply(input$optsStratify, as.name))
-        print(input$optsStratify)
-        result(do.call(PoolPrev, add_args))
+        col_args <- c(req_args, lapply(input$optsStratify, as.name))
+        result(do.call(PoolPrev, col_args))
       }
+    } else if (input$optsHierarchy) {
+      hier_args <- req_args
+      hier_args$hierarchy <- input$optsHierarchyOrder
+      print(hier_args)
+      result(do.call(HierPoolPrev, hier_args))
     }
-
-    #if (input$optsHierarchy) {
-    #  result(HierPoolPrev(data(), input$colTestResults, input$colUnitNumber, bayesian = F))
-    #}
     else result(NULL)
   })
 
