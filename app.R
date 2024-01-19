@@ -2,8 +2,10 @@ library(shiny)
 library(shinyBS)
 library(sortable)
 library(DT)
+library(dplyr)
 
 library(PoolTestR)
+#library(PoolPoweR)
 
 ui <- fluidPage(
 
@@ -50,6 +52,7 @@ ui <- fluidPage(
                           uiOutput("colSelectStratify"),
                           uiOutput("checkHierarchy"),
                           uiOutput("colHierarchyOrder"),
+                          uiOutput("optsSettings"),
                           uiOutput("btnAnalyse")
                       ),
                         mainPanel(
@@ -63,13 +66,160 @@ ui <- fluidPage(
                       h2("Design a pooled survey"),
                       actionButton("btnDocsDesign", "See instructions"),
                       hr(),
+                      sidebarLayout(
+                        sidebarPanel(
+
+                          # 1. Survey options ---------------------------------
+                          selectInput(
+                            "optsObjective",
+                            tags$span(
+                              "Survey objective",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                              ),
+                            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen")
+                          ),
+
+                          selectInput(
+                            "optsMode",
+                            tags$span(
+                              "Survey mode",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                              ),
+                            choices = c("Select" = "", "Calculate power", "Optimise cost")
+                          ),
+
+                          tagList(
+                            selectInput(
+                              "optsTrapping",
+                              tags$span(
+                                "Trapping time",
+                                tipify(icon("info-circle"), "Placeholder", placement = "right")
+                              ),
+                              choices = c("Select" = "",  "Fixed period", "Target sample size")
+                            ),
+                            tags$hr(style = "border-top: 1px solid #CCC;")
+                          ),
+
+                          # 2. Parameter options ------------------------------
+                          sliderInput(
+                            "optsSensitivity",
+                            tags$span(
+                              "Sensitivity",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                            ),
+                            min = 0.5, max = 1, value = 1
+                          ),
+
+                          sliderInput(
+                            "optsSpecificity",
+                            tags$span(
+                              "Specificity",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                            ),
+                            min = 0.5, max = 1, value = 1
+                          ),
+
+                          tagList(
+                            sliderInput(
+                              "optsPrevalence",
+                              tags$span(
+                                "Prevalence",
+                                tipify(icon("info-circle"), "Placeholder", placement = "right")
+                              ),
+                              min = 0, max = 1, value = 1
+                            ),
+                            tags$hr(style = "border-top: 1px solid #CCC;")
+                          ),
+
+                          # 3. Cluster options --------------------------------
+                          checkboxInput(
+                            "optsClustered",
+                            tags$span(
+                              "Clustered design",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                            ), value = TRUE
+                          ),
+
+                          conditionalPanel(
+                            condition = "input.optsClustered == true",
+                            sliderInput(
+                              "optsCorrelation",
+                              tags$span(
+                                "Within-cluster correlation",
+                                tipify(icon("info-circle"), "Placeholder", placement = "right")
+                              ),
+                              min = 0, max = 1, value = 1
+                            )
+                          ),
+
+                          # 4a. For identifying cost-effective designs --------
+                          conditionalPanel(
+                            condition = "input.optsMode == 'Optimise cost'",
+                            tagList(
+                              tags$hr(style = "border-top: 1px solid #CCC;"),
+                              textInput("optsCostUnit", "Cost per unit"),
+                              textInput("optsCostPool", "Cost per pool"),
+                              textInput("optsMaxPoolSize", "Maximum pool size"),
+
+                              # 4a. If clustered
+                              conditionalPanel(
+                                condition = "input.optsClustered == true",
+                                textInput("optsCostCluster", "Cost per cluster")
+                              )
+                            )
+                          ),
+
+
+                          # 4b. For evaluating existing designs ---------------
+                          conditionalPanel(
+                            condition = "input.optsMode == 'Calculate power'",
+
+                            # 4bx. Fixed period -------------------------------
+                            conditionalPanel(
+                              condition = "input.optsTrapping == 'Fixed period'",
+                              tagList(
+                                tags$hr(style = "border-top: 1px solid #CCC;"),
+                                textInput("optsUnitsMean", "Mean units per cluster"),
+                                textInput("optsUnitsVar", "Variance of units")
+                              )
+                            ),
+
+                            # 4by. Target sample size -------------------------
+                            conditionalPanel(
+                              condition = "input.optsTrapping == 'Target sample size'",
+                              tagList(
+                                tags$hr(style = "border-top: 1px solid #CCC;"),
+                                textInput("optsPoolSize", "Number of units per pool")
+                              ),
+
+                              # 4by. Cluster options
+                              conditionalPanel(
+                                condition = "input.optsClustered == false",
+                                textInput("optsPoolNum", "Number of pools")
+                              ),
+
+                              conditionalPanel(
+                                condition = "input.optsClustered == true",
+                                textInput("optsPoolNumClust", "Number of pools per cluster")
+                              )
+                            ) # End of 4by. Target sample size ----------------
+                          ), # End of 4b. Evaluating existing designs ---------
+
+                        ), # End of sidebarPanel ------------------------------
+                        mainPanel()
+                        )
+             ),
+
+             tabPanel("Old design",
+                      h2("Design a pooled survey"),
+                      actionButton("btnDocsDesign", "See instructions"),
+                      hr(),
 
 
                       ##
                       ## Required options
                       ##
 
-                      ## First row of required options
                       fluidRow(
                         column(3,
                                selectInput("optsObjective",
@@ -77,7 +227,7 @@ ui <- fluidPage(
                                              "Survey objective",
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
                                              ),
-                                           choices = c("Estimate prevalence", "Detect pathogen"))
+                                           choices = c("Select" = "", "Estimate prevalence", "Detect pathogen"))
                         ),
                         column(3,
                                selectInput("optsMode",
@@ -85,7 +235,7 @@ ui <- fluidPage(
                                              "Survey mode",
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
                                              ),
-                                           choices = c("Calculate power", "Optimise cost"))
+                                           choices = c("Select" = "", "Calculate power", "Optimise cost"))
                         ),
                         column(3,
                                selectInput("optsTrapping",
@@ -113,7 +263,7 @@ ui <- fluidPage(
                                              "Sensitivity",
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
                                              ),
-                                           min = 0,
+                                           min = 0.5,
                                            max = 1,
                                            value = 1)
                         ),
@@ -123,7 +273,7 @@ ui <- fluidPage(
                                              "Specificity",
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
                                              ),
-                                           min = 0,
+                                           min = 0.5,
                                            max = 1,
                                            value = 1)
                         ),
@@ -150,10 +300,6 @@ ui <- fluidPage(
                                )
                         )
                       ),
-
-
-                      ## Required options tooltips
-                      bsTooltip("optsObjective", "placeholder", "right"),
 
 
                       ##
@@ -330,16 +476,32 @@ server <- function(input, output, session) {
       bucket_list(
         header = "Hierarchy order",
         add_rank_list(
-          text = "Drag to reorder by hierarchy",
-          input_id = "optsHierarchyOrder",
+          text = "Columns to exclude (e.g. Time)",
+          input_id = "_optsHierarchyExclude",
           labels = metadata_cols()
-          ),
+        ),
         add_rank_list(
-          text = "Drag here to exclude columns (e.g. Time)",
-          input_id = "_optsHierarchyExclude"
-        )
+          text = "Drag items here and reorder by hierarchy (largest to smallest)",
+          input_id = "optsHierarchyOrder"
+          )
       )
     }
+  })
+  output$optsSettings <- renderUI({
+    req(data())
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      tags$details(
+        tags$br(),
+        tags$summary("Advanced settings"),
+
+        textInput("optsRound", "Number of decimal places", value = 4),
+
+        checkboxInput("optsBayesian", "Bayesian calculations (slow)")
+
+      ),
+      tags$br()
+    )
   })
   output$btnAnalyse <- renderUI({
     req(data())
@@ -361,6 +523,7 @@ server <- function(input, output, session) {
     # Debugging
     print(input$optsHierarchy)
     print(input$optsStratify)
+    print(input$optsRound)
 
     if (!input$optsHierarchy) {
       if (is.null(input$optsStratify)) {
@@ -388,7 +551,7 @@ server <- function(input, output, session) {
 
   output$conditionalTable <- renderDataTable({
       req(result())
-      result()
+      result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRound)))
     })
 
 }
