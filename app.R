@@ -41,8 +41,7 @@ ui <- fluidPage(
 
              tabPanel("Analyse",
                       h2("Analyse pooled data"),
-                      actionButton("btnDocsAnalyse", "See instructions"),
-                      hr(),
+                      br(),
 
                       fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
                       sidebarLayout(
@@ -61,11 +60,9 @@ ui <- fluidPage(
                       )
              ),
 
-
              tabPanel("Design",
                       h2("Design a pooled survey"),
-                      actionButton("btnDocsDesign", "See instructions"),
-                      hr(),
+                      br(),
                       sidebarLayout(
                         sidebarPanel(
 
@@ -88,67 +85,82 @@ ui <- fluidPage(
                             choices = c("Select" = "", "Calculate power", "Optimise cost")
                           ),
 
+                          selectInput(
+                            "optsTrapping",
+                            tags$span(
+                              "Trapping time",
+                              tipify(icon("info-circle"), "Placeholder", placement = "right")
+                            ),
+                            choices = c("Select" = "",  "Fixed period", "Target sample size")
+                          ),
+
                           tagList(
-                            selectInput(
-                              "optsTrapping",
+                            checkboxInput(
+                              "optsClustered",
                               tags$span(
-                                "Trapping time",
+                                tags$b("Clustered design?"),
                                 tipify(icon("info-circle"), "Placeholder", placement = "right")
-                              ),
-                              choices = c("Select" = "",  "Fixed period", "Target sample size")
+                                ), value = TRUE
                             ),
                             tags$hr(style = "border-top: 1px solid #CCC;")
                           ),
 
                           # 2. Parameter options ------------------------------
-                          sliderInput(
+                          selectInput(
                             "optsSensitivity",
                             tags$span(
                               "Sensitivity",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            min = 0.5, max = 1, value = 1
+                            choices = c("Low", "Med.", "High", "Other"), # 0.5-1
+                            selected = "High"
                           ),
 
-                          sliderInput(
+                          selectInput(
                             "optsSpecificity",
                             tags$span(
                               "Specificity",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            min = 0.5, max = 1, value = 1
+                            choices = c("Low", "Med.", "High", "Other"), # 0.5-1
+                            selected = "High"
                           ),
 
-                          tagList(
-                            sliderInput(
-                              "optsPrevalence",
-                              tags$span(
-                                "Prevalence",
-                                tipify(icon("info-circle"), "Placeholder", placement = "right")
-                              ),
-                              min = 0, max = 1, value = 1
-                            ),
-                            tags$hr(style = "border-top: 1px solid #CCC;")
-                          ),
-
-                          # 3. Cluster options --------------------------------
-                          checkboxInput(
-                            "optsClustered",
+                          selectInput(
+                            "optsPrevalence",
                             tags$span(
-                              "Clustered design",
+                              "Prevalence",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
-                            ), value = TRUE
+                            ),
+                            choices = c("Low (0.1%)" = 0.001,
+                                        "Med. (0.5%)" = 0.005,
+                                        "High (2%)" = 0.02,
+                                        "Other" = "other"),
+                            selected = 0.005
+                            ),
+                          conditionalPanel(
+                            condition = "input.optsPrevalence == 'other'",
+                            textInput("optsPrevalenceOther", NULL, placeholder = "Specify %"),
                           ),
 
                           conditionalPanel(
                             condition = "input.optsClustered == true",
-                            sliderInput(
-                              "optsCorrelation",
+                            selectInput(
+                              "optCorrelation",
                               tags$span(
                                 "Within-cluster correlation",
                                 tipify(icon("info-circle"), "Placeholder", placement = "right")
                               ),
-                              min = 0, max = 1, value = 1
+                              # TODO: Update with acceptable values
+                              choices = c("Low" = 0.001,
+                                          "Med" = 0.005,
+                                          "High" = 0.02,
+                                          "Other" = "other"),
+                              selected = 0.005
+                              ),
+                            conditionalPanel(
+                              condition = "input.optsCorrelation == 'other'",
+                              textInput("optsCorrelationOther", NULL, placeholder = "Specify %")
                             )
                           ),
 
@@ -205,9 +217,18 @@ ui <- fluidPage(
                             ) # End of 4by. Target sample size ----------------
                           ), # End of 4b. Evaluating existing designs ---------
 
+                          actionButton("btnDesign", "Run!")
+
                         ), # End of sidebarPanel ------------------------------
-                        mainPanel()
+
+                        mainPanel(
+                          tabsetPanel(
+                            type = "tabs",
+                            tabPanel("Results", NULL),
+                            tabPanel("Help", NULL)
+                          )
                         )
+                      ) # End of sidebarLayout -------------------------------
              ),
 
              tabPanel("Old design",
@@ -278,7 +299,7 @@ ui <- fluidPage(
                                            value = 1)
                         ),
                         column(3,
-                               sliderInput("optsPrevalence",
+                               sliderInput("optsPrevalence2",
                                            tags$span(
                                              "Prevalence",
                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
@@ -289,7 +310,7 @@ ui <- fluidPage(
                         ),
                         column(3,
                                conditionalPanel(condition = "input.optsClustered == true",
-                                                sliderInput("optsCorrelation",
+                                                sliderInput("optsCorrelation2",
                                                             tags$span(
                                                               "Within-cluster correlation",
                                                               tipify(icon("info-circle"), "Placeholder", placement = "right")
@@ -397,16 +418,6 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, "main_nav", selected = "Design")
   })
 
-  ##
-  ## Analyse and Design buttons to docs
-  ##
-  observeEvent(input$btnHelp, {
-    updateTabsetPanel(session, "main_nav", selected = "Documentation")
-  })
-
-  observeEvent(input$btnAnalyse, {
-    updateTabsetPanel(session, "main_nav", selected = "Analyse")
-  })
   ##
   ## Analyse: Selecting columns for test result and unit number
   ##
@@ -554,6 +565,12 @@ server <- function(input, output, session) {
       result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRound)))
     })
 
+  ##
+  ## Design
+  ##
+
+
 }
+
 
 shinyApp(ui = ui, server = server)
