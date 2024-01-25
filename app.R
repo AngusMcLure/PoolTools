@@ -14,38 +14,40 @@ ui <- fluidPage(
 
 
              tabPanel("Home",
-                      p("text to describe each button with some examples"),
-                      actionButton("btnHelp", "Documentation"),
-                      actionButton("btnAnalyse", "Analyse pooled data"),
-                      actionButton("btnDesign", "Design a pooled survey")
-             ),
+                      fluidRow(
+                        column(
+                          width = 4,
+                          style = "text-align: center;",
+                          p("To estimate marker prevalence from", tags$br(),
+                            "pooled test results, select:"),
+                          actionButton("btnAnalysePage", "Analyse pooled data"),
+                        ),
+                        column(
+                          width = 4,
+                          style = "text-align: center;",
+                          p("To design cost-effective tests, or evaluate", tags$br(),
+                            "the power of an existing design, select:"),
+                          actionButton("btnDesignPage", "Design a pooled survey")
+                        )
+                      )
+                    ),
 
-
-             navbarMenu("Help",
-                        tabPanel("About",
-                                 h2("About PoolTools"),
-                                 h3("How to cite"),
-                                 h3("Relevant papers"),
-                                 h3("Contact"),
-                                 h3("Credits and acknowledgements")
-                                 ),
-
-
-                        tabPanel("Documentation",
-                                 h2("Documentation"),
-                                 h3("How to analyse pooled data"),
-                                 h3("How to design a pooled survey")
-                                 )
-             ),
+            tabPanel("About",
+                     h2("About PoolTools"),
+                     h3("How to cite"),
+                     h3("Relevant papers"),
+                     h3("Contact"),
+                     h3("Credits and acknowledgements")
+                     ),
 
 
              tabPanel("Analyse",
                       h2("Analyse pooled data"),
                       br(),
 
-                      fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
                       sidebarLayout(
                         sidebarPanel(
+                          fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
                           uiOutput("colSelectTestResults"),
                           uiOutput("colSelectUnitNumber"),
                           uiOutput("colSelectStratify"),
@@ -54,8 +56,33 @@ ui <- fluidPage(
                           uiOutput("optsSettings"),
                           uiOutput("btnAnalyse")
                       ),
+
+
                         mainPanel(
-                          dataTableOutput("conditionalTable")
+                          tabsetPanel(
+                              type = "tabs",
+                              tabPanel("Results", dataTableOutput("conditionalTable")),
+                              tabPanel(
+                                "Help",
+                                h2("How to analyse pooled data"),
+                                p("This mode estimates the prevalence of a
+                                  marker in a population based on tests performed
+                                  on pooled samples."),
+                                p("The marker prevalence can be estimated across
+                                  different categories, such as per-site or
+                                  per-village, if provided."),
+                                p("Lastly, a hierarchical model can be applied
+                                  to avoid biased prevalence estimates."),
+                                h3("Basic usage"),
+                                tags$ul(
+                                  tags$li("Input data requirements"),
+                                  tags$li("Column selection"),
+                                  tags$li("Estimate prevalence settings (PoolPrev)"),
+                                  tags$li("Adjust for hierarchial sampling (HierPoolPrev)"),
+                                  tags$li("Advanced settings")
+                                )
+                              )
+                            )
                         )
                       )
              ),
@@ -112,8 +139,15 @@ ui <- fluidPage(
                               "Sensitivity",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            choices = c("Low", "Med.", "High", "Other"), # 0.5-1
-                            selected = "High"
+                            choices = c("Low (80%)" = 0.8,
+                                        "Med. (90%)" = 0.9,
+                                        "High (100%)" = 1,
+                                        "Other" = "other"), # 0.5-1
+                            selected = 1
+                          ),
+                          conditionalPanel(
+                            condition = "input.optsSensitivity == 'other'",
+                            textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
                           ),
 
                           selectInput(
@@ -122,8 +156,15 @@ ui <- fluidPage(
                               "Specificity",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            choices = c("Low", "Med.", "High", "Other"), # 0.5-1
-                            selected = "High"
+                            choices = c("Low (80%)" = 0.8,
+                                        "Med. (90%)" = 0.9,
+                                        "High (100%)" = 1,
+                                        "Other" = "other"), # 0.5-1
+                            selected = "1"
+                          ),
+                          conditionalPanel(
+                            condition = "input.optsSpecificity == 'other'",
+                            textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
                           ),
 
                           selectInput(
@@ -146,7 +187,7 @@ ui <- fluidPage(
                           conditionalPanel(
                             condition = "input.optsClustered == true",
                             selectInput(
-                              "optCorrelation",
+                              "optsCorrelation",
                               tags$span(
                                 "Within-cluster correlation",
                                 tipify(icon("info-circle"), "Placeholder", placement = "right")
@@ -229,174 +270,6 @@ ui <- fluidPage(
                           )
                         )
                       ) # End of sidebarLayout -------------------------------
-             ),
-
-             tabPanel("Old design",
-                      h2("Design a pooled survey"),
-                      actionButton("btnDocsDesign", "See instructions"),
-                      hr(),
-
-
-                      ##
-                      ## Required options
-                      ##
-
-                      fluidRow(
-                        column(3,
-                               selectInput("optsObjective",
-                                           tags$span(
-                                             "Survey objective",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           choices = c("Select" = "", "Estimate prevalence", "Detect pathogen"))
-                        ),
-                        column(3,
-                               selectInput("optsMode",
-                                           tags$span(
-                                             "Survey mode",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           choices = c("Select" = "", "Calculate power", "Optimise cost"))
-                        ),
-                        column(3,
-                               selectInput("optsTrapping",
-                                           tags$span(
-                                             "Trapping time",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           choices = c("Fixed period", "Target sample size"))
-                        ),
-                        column(3,
-                               checkboxInput("optsClustered",
-                                           tags$span(
-                                             "Clustered design",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                             value = TRUE)
-                        )
-                      ),
-
-                      ## Second row of required options
-                      fluidRow(
-                        column(3,
-                               sliderInput("optsSensitivity",
-                                           tags$span(
-                                             "Sensitivity",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           min = 0.5,
-                                           max = 1,
-                                           value = 1)
-                        ),
-                        column(3,
-                               sliderInput("optsSpecificity",
-                                           tags$span(
-                                             "Specificity",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           min = 0.5,
-                                           max = 1,
-                                           value = 1)
-                        ),
-                        column(3,
-                               sliderInput("optsPrevalence2",
-                                           tags$span(
-                                             "Prevalence",
-                                             tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                             ),
-                                           min = 0,
-                                           max = 1,
-                                           value = 1)
-                        ),
-                        column(3,
-                               conditionalPanel(condition = "input.optsClustered == true",
-                                                sliderInput("optsCorrelation2",
-                                                            tags$span(
-                                                              "Within-cluster correlation",
-                                                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                                            ),
-                                                            min = 0,
-                                                            max = 1,
-                                                            value = 1)
-                               )
-                        )
-                      ),
-
-
-                      ##
-                      ## For identifying cost-effective designs
-                      ##
-                      conditionalPanel(condition = "input.optsMode == 'Optimise cost'",
-
-                                       sidebarLayout(
-
-                                         ## Cost-specific options
-                                         sidebarPanel(
-                                           textInput("optsCostUnit",
-                                                     "Cost per unit",
-                                                     value = 1),
-                                           textInput("optsCostPool",
-                                                     "Cost per pool",
-                                                     value = 2),
-                                           textInput("optsMaxPoolSize",
-                                                     "Maximum pool size",
-                                                     value = 10),
-                                           conditionalPanel(condition = "input.optsClustered == true",
-                                                            textInput("optsCostCluster",
-                                                                      "Cost per cluster",
-                                                                      value = 5)
-                                                            )
-
-                                         ),
-
-                                         mainPanel(
-                                           h3("Identify cost-effective designs"),
-                                           p("[display PoolPoweR::optimise_X() output]")
-                                         )
-                                         )
-                                       ),
-
-
-                      ##
-                      ## Evaluating existing designs
-                      ##
-                      conditionalPanel(condition = "input.optsMode == 'Calculate power'",
-
-                                       sidebarLayout(
-
-                                         sidebarPanel(
-                                           conditionalPanel("input.optsTrapping == 'Fixed period'",
-                                                            textInput("optsUnitsMean",
-                                                                      "Mean units per cluster"
-                                                                      ),
-                                                            textInput("optsUnitsVar",
-                                                                      "Variance of units"
-                                                                      )
-                                                            ),
-                                           conditionalPanel("input.optsTrapping == 'Target sample size'",
-                                                            textInput("optsPoolSize",
-                                                                      "Number of units per pool"
-                                                                    ),
-                                                            conditionalPanel("input.optsClustered == false",
-                                                                             textInput("optsPoolNum",
-                                                                                       "Number of pools"
-                                                                                       )
-                                                                             ),
-                                                            conditionalPanel("input.optsClustered == true",
-                                                                             textInput("optsPoolNumClust",
-                                                                                       "Number of pools per cluster"
-                                                                                       )
-                                                                             )
-                                                            )
-                                         ),
-
-
-                                         mainPanel()
-                                       )
-                      )
-
-
-
              )
   )
 )
@@ -406,15 +279,11 @@ server <- function(input, output, session) {
   ##
   ## Home page buttons
   ##
-  observeEvent(input$btnHelp, {
-    updateTabsetPanel(session, "main_nav", selected = "Documentation")
-  })
-
-  observeEvent(input$btnAnalyse, {
+  observeEvent(input$btnAnalysePage, {
     updateTabsetPanel(session, "main_nav", selected = "Analyse")
   })
 
-  observeEvent(input$btnDesign, {
+  observeEvent(input$btnDesignPage, {
     updateTabsetPanel(session, "main_nav", selected = "Design")
   })
 
@@ -568,6 +437,10 @@ server <- function(input, output, session) {
   ##
   ## Design
   ##
+  observeEvent(input$btnDesign, {
+    print("buttonhit")
+    print(input$optsMode)
+  })
 
 
 }
