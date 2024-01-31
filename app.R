@@ -5,7 +5,8 @@ library(DT)
 library(dplyr)
 
 library(PoolTestR)
-#library(PoolPoweR)
+library(devtools)
+devtools::load_all('~/GitHub/PoolPoweR/')
 
 ui <- fluidPage(
 
@@ -47,9 +48,17 @@ ui <- fluidPage(
 
                       sidebarLayout(
                         sidebarPanel(
-                          fileInput("fileAnalyse", "Upload CSV", accept = ".csv"),
+                          fileInput(
+                            "fileAnalyse",
+                            accept = ".csv",
+                            tags$span(
+                              "Upload data",
+                              tipify(icon("info-circle"), "Must be a .csv file", placement = "right")
+                              )
+                          ),
                           uiOutput("colSelectTestResults"),
                           uiOutput("colSelectUnitNumber"),
+                          uiOutput("checkStratify"),
                           uiOutput("colSelectStratify"),
                           uiOutput("checkHierarchy"),
                           uiOutput("colHierarchyOrder"),
@@ -61,7 +70,7 @@ ui <- fluidPage(
                         mainPanel(
                           tabsetPanel(
                               type = "tabs",
-                              tabPanel("Results", dataTableOutput("conditionalTable")),
+                              tabPanel("Results", dataTableOutput("outAnalyse")),
                               tabPanel(
                                 "Help",
                                 h2("How to analyse pooled data"),
@@ -100,7 +109,7 @@ ui <- fluidPage(
                               "Survey objective",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                               ),
-                            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen")
+                            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
                           ),
 
                           selectInput(
@@ -109,7 +118,7 @@ ui <- fluidPage(
                               "Survey mode",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                               ),
-                            choices = c("Select" = "", "Calculate power", "Optimise cost")
+                            choices = c("Select" = "", "Optimise cost", "Calculate power (Coming soon...)")
                           ),
 
                           selectInput(
@@ -134,46 +143,12 @@ ui <- fluidPage(
 
                           # 2. Parameter options ------------------------------
                           selectInput(
-                            "optsSensitivity",
-                            tags$span(
-                              "Sensitivity",
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                            ),
-                            choices = c("Low (80%)" = 0.8,
-                                        "Med. (90%)" = 0.9,
-                                        "High (100%)" = 1,
-                                        "Other" = "other"), # 0.5-1
-                            selected = 1
-                          ),
-                          conditionalPanel(
-                            condition = "input.optsSensitivity == 'other'",
-                            textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
-                          ),
-
-                          selectInput(
-                            "optsSpecificity",
-                            tags$span(
-                              "Specificity",
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                            ),
-                            choices = c("Low (80%)" = 0.8,
-                                        "Med. (90%)" = 0.9,
-                                        "High (100%)" = 1,
-                                        "Other" = "other"), # 0.5-1
-                            selected = "1"
-                          ),
-                          conditionalPanel(
-                            condition = "input.optsSpecificity == 'other'",
-                            textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
-                          ),
-
-                          selectInput(
                             "optsPrevalence",
                             tags$span(
                               "Prevalence",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            choices = c("Low (0.1%)" = 0.001,
+                            choices = c("Low (0.01%)" = 0.001,
                                         "Med. (0.5%)" = 0.005,
                                         "High (2%)" = 0.02,
                                         "Other" = "other"),
@@ -192,12 +167,11 @@ ui <- fluidPage(
                                 "Within-cluster correlation",
                                 tipify(icon("info-circle"), "Placeholder", placement = "right")
                               ),
-                              # TODO: Update with acceptable values
-                              choices = c("Low" = 0.001,
-                                          "Med" = 0.005,
-                                          "High" = 0.02,
+                              choices = c("Low (1%)" = 0.01,
+                                          "Med. (10%)"= 0.1,
+                                          "High (30%)" = 0.3,
                                           "Other" = "other"),
-                              selected = 0.005
+                              selected = 0.1
                               ),
                             conditionalPanel(
                               condition = "input.optsCorrelation == 'other'",
@@ -205,58 +179,119 @@ ui <- fluidPage(
                             )
                           ),
 
-                          # 4a. For identifying cost-effective designs --------
+                          # 3a. For identifying cost-effective designs --------
                           conditionalPanel(
                             condition = "input.optsMode == 'Optimise cost'",
                             tagList(
                               tags$hr(style = "border-top: 1px solid #CCC;"),
                               textInput("optsCostUnit", "Cost per unit"),
                               textInput("optsCostPool", "Cost per pool"),
-                              textInput("optsMaxPoolSize", "Maximum pool size"),
-
-                              # 4a. If clustered
+                              # 3a. If clustered
                               conditionalPanel(
                                 condition = "input.optsClustered == true",
                                 textInput("optsCostCluster", "Cost per cluster")
-                              )
-                            )
-                          ),
+                              ),
+                              # 3a. Continue optimise cost settings
+                              textInput("optsMaxPoolSize", "Maximum pool size"),
+
+                              conditionalPanel(
+                                condition = "input.optsTrapping == 'Fixed period",
+                                textInput("optsUnitsMean", "Mean units per cluster")
+                              ),
+
+                            ) # End tagList
+                          ), # 3a. end cost-effective designs
 
 
-                          # 4b. For evaluating existing designs ---------------
-                          conditionalPanel(
-                            condition = "input.optsMode == 'Calculate power'",
+                         # # 4b. For evaluating existing designs ---------------
+                         # conditionalPanel(
+                         #   condition = "input.optsMode == 'Calculate power'",
+#
+                         #   # 4bx. Fixed period -------------------------------
+                         #   conditionalPanel(
+                         #     condition = "input.optsTrapping == 'Fixed period'",
+                         #     tagList(
+                         #       tags$hr(style = "border-top: 1px solid #CCC;"),
+                         #       textInput("optsUnitsMean", "Mean units per cluster"),
+                         #       textInput("optsUnitsVar", "Variance of units")
+                         #     )
+                         #   ),
+#
+                         #   # 4by. Target sample size -------------------------
+                         #   conditionalPanel(
+                         #     condition = "input.optsTrapping == 'Target sample size'",
+                         #     tagList(
+                         #       tags$hr(style = "border-top: 1px solid #CCC;"),
+                         #       textInput("optsPoolSize", "Number of units per pool")
+                         #     ),
+#
+                         #     # 4by. Cluster options
+                         #     conditionalPanel(
+                         #       condition = "input.optsClustered == false",
+                         #       textInput("optsPoolNum", "Number of pools")
+                         #     ),
+#
+                         #     conditionalPanel(
+                         #       condition = "input.optsClustered == true",
+                         #       textInput("optsPoolNumClust", "Number of pools per cluster")
+                         #     )
+                         #   ) # End of 4by. Target sample size ----------------
+                         # ), # End of 4b. Evaluating existing designs ---------
 
-                            # 4bx. Fixed period -------------------------------
-                            conditionalPanel(
-                              condition = "input.optsTrapping == 'Fixed period'",
-                              tagList(
-                                tags$hr(style = "border-top: 1px solid #CCC;"),
-                                textInput("optsUnitsMean", "Mean units per cluster"),
+                          # 5. Advanced settings ------------------------------
+
+                          tagList(
+                            tags$hr(style = "border-top: 1px solid #CCC;"),
+                            tags$details(
+                              tags$br(),
+                              tags$summary("Advanced settings"),
+
+                              selectInput(
+                                "optsSensitivity",
+                                tags$span(
+                                  "Sensitivity",
+                                  tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                  ),
+                                choices = c("Low (80%)" = 0.8,
+                                            "Med. (90%)" = 0.9,
+                                            "High (100%)" = 1,
+                                            "Other" = "other"), # 0.5-1
+                                selected = 1
+                              ),
+                              conditionalPanel(
+                                condition = "input.optsSensitivity == 'other'",
+                                textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
+                              ),
+
+
+                              selectInput(
+                                "optsSpecificity",
+                                tags$span(
+                                  "Specificity",
+                                  tipify(icon("info-circle"), "Placeholder", placement = "right")
+                                ),
+                                choices = c("Low (95%)" = 0.95,
+                                            "Med. (99%)" = 0.99,
+                                            "High (100%)" = 1,
+                                            "Other" = "other"), # 0.5-1
+                                selected = 1
+                              ),
+                              conditionalPanel(
+                                condition = "input.optsSpecificity == 'other'",
+                                textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
+                              ),
+
+                              conditionalPanel(
+                                condition = "input.optsTrapping == 'Fixed period'",
                                 textInput("optsUnitsVar", "Variance of units")
                               )
-                            ),
 
-                            # 4by. Target sample size -------------------------
-                            conditionalPanel(
-                              condition = "input.optsTrapping == 'Target sample size'",
-                              tagList(
-                                tags$hr(style = "border-top: 1px solid #CCC;"),
-                                textInput("optsPoolSize", "Number of units per pool")
-                              ),
+                                ), # End of tags$details()
 
-                              # 4by. Cluster options
-                              conditionalPanel(
-                                condition = "input.optsClustered == false",
-                                textInput("optsPoolNum", "Number of pools")
-                              ),
+                            tags$br()
 
-                              conditionalPanel(
-                                condition = "input.optsClustered == true",
-                                textInput("optsPoolNumClust", "Number of pools per cluster")
-                              )
-                            ) # End of 4by. Target sample size ----------------
-                          ), # End of 4b. Evaluating existing designs ---------
+                          ), # End of tagList()
+
 
                           actionButton("btnDesign", "Run!")
 
@@ -265,7 +300,7 @@ ui <- fluidPage(
                         mainPanel(
                           tabsetPanel(
                             type = "tabs",
-                            tabPanel("Results", NULL),
+                            tabPanel("Results", verbatimTextOutput("outDesign")),
                             tabPanel("Help", NULL)
                           )
                         )
@@ -327,19 +362,30 @@ server <- function(input, output, session) {
                 choices = c("Select column" = "", cols)
                 )
   })
-  output$colSelectStratify <- renderUI({
-    req(data())
-    # Exclude columns that were selected for test results and unit number
-    checkboxGroupInput("optsStratify",
-                       tags$span(
-                       "Estimate prevalence for:",
-                       tipify(icon("info-circle"), "Leave empty to estimate prevalence on the whole data set", placement = "right")
-                       ),
-                       choices = metadata_cols())
+  output$checkStratify <- renderUI({
+    req(data(), input$colTestResults, input$colUnitNumber)
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      checkboxInput(
+        "optsStratify",
+        tags$span(
+          "Stratify data?",
+          tipify(icon("info-circle"), "Uncheck to estimate prevalence on the whole data set", placement = "right")
+        )
+      )
+    )
   })
+
+  output$colSelectStratify <- renderUI({
+    req(data(), input$colTestResults, input$colUnitNumber)
+    if (input$optsStratify) {
+      checkboxGroupInput("optsColStratify", "Stratify data by:", choices = metadata_cols())
+    }
+  })
+
   output$checkHierarchy <- renderUI({
     # Although the options don't change, reveal only when file is uploaded
-    req(data())
+    req(data(), input$colTestResults, input$colUnitNumber)
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInput("optsHierarchy",
@@ -351,7 +397,7 @@ server <- function(input, output, session) {
     )
   })
   output$colHierarchyOrder <- renderUI({
-    req(data())
+    req(data(), input$colTestResults, input$colUnitNumber)
     if (input$optsHierarchy) {
       bucket_list(
         header = "Hierarchy order",
@@ -402,17 +448,17 @@ server <- function(input, output, session) {
 
     # Debugging
     print(input$optsHierarchy)
-    print(input$optsStratify)
+    print(input$optsColStratify)
     print(input$optsRound)
 
     if (!input$optsHierarchy) {
-      if (is.null(input$optsStratify)) {
+      if (is.null(input$optsColStratify)) {
       # Estimate prevalence on whole data
       result(do.call(PoolPrev, req_args))
       } else {
         # Estimate prevalence for each selected column
         # Parse arguments
-        col_args <- c(req_args, lapply(input$optsStratify, as.name))
+        col_args <- c(req_args, lapply(input$optsColStratify, as.name))
         result(do.call(PoolPrev, col_args))
       }
     } else if (input$optsHierarchy) {
@@ -420,8 +466,8 @@ server <- function(input, output, session) {
       hier_args <- req_args
       hier_args$hierarchy <- input$optsHierarchyOrder
       # Parse arguments for stratification
-      if (!is.null(input$optsStratify)) {
-        hier_args <- c(hier_args, lapply(input$optsStratify, as.name))
+      if (!is.null(input$optsColStratify)) {
+        hier_args <- c(hier_args, lapply(input$optsColStratify, as.name))
       }
       print(hier_args)
       result(do.call(HierPoolPrev, hier_args))
@@ -429,7 +475,7 @@ server <- function(input, output, session) {
     else result(NULL)
   })
 
-  output$conditionalTable <- renderDataTable({
+  output$outAnalyse <- renderDataTable({
       req(result())
       result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRound)))
     })
@@ -437,9 +483,58 @@ server <- function(input, output, session) {
   ##
   ## Design
   ##
+
+  design_results <- reactiveVal()
+
   observeEvent(input$btnDesign, {
-    print("buttonhit")
-    print(input$optsMode)
+
+    print(
+      input$optsPrevalence,
+      input$optsCostUnit,
+      input$optsCostPool,
+      input$optsCostCluster,
+      input$optsCorrelation,
+      input$optsSensitivity,
+      input$optsSpecificity,
+      input$optsUnitsMean,
+      input$optsMaxPool
+    )
+
+    req(
+      input$optsPrevalence,
+      input$optsCostUnit,
+      input$optsCostPool,
+      input$optsCostCluster,
+      input$optsCorrelation,
+      input$optsSensitivity,
+      input$optsSpecificity,
+      input$optsUnitsMean,
+      input$optsMaxPool
+    )
+
+    out <- optimise_sN_prevalence(
+      prevalence = input$optsPrevalence,
+      cost_unit = input$optsCostUnit,
+      cost_pool = input$optsCostPool,
+      cost_cluster = input$optsCostCluster,
+      correlation = input$optsCorrelation,
+      sensitivity = input$optsSensitivity,
+      specificity = input$optsSpecificity,
+      max_s = input$optsUnitsMean,
+      max_N = input$optsMaxPool,
+      form = "beta"
+    )
+
+    # Update output display only if results
+    req(length(out) > 0)
+    design_results(out)
+  })
+
+  output$outDesign <- renderText({
+    if (is.null(design_results())) {
+      return(NULL)
+    }
+    print(design_results())
   })
 
 
