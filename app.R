@@ -442,23 +442,23 @@ server <- function(input, output, session) {
     req_args <- list(
       data = data(),
       result = input$colTestResults,
-      poolSize = input$colUnitNumber,
-      bayesian = F
+      poolSize = input$colUnitNumber
     )
 
     # Debugging
-    print(input$optsHierarchy)
-    print(input$optsColStratify)
-    print(input$optsRound)
+    print(input$optsBayesian)
 
     if (!input$optsHierarchy) {
+      # Add bayesian switch for PoolPrev
+      poolprev_args <- req_args
+      poolprev_args$bayesian <- input$optsBayesian
       if (is.null(input$optsColStratify)) {
       # Estimate prevalence on whole data
-      result(do.call(PoolPrev, req_args))
+      result(do.call(PoolPrev, poolprev_args))
       } else {
-        # Estimate prevalence for each selected column
+        # Estimate prevalence for each selected column (stratified)
         # Parse arguments
-        col_args <- c(req_args, lapply(input$optsColStratify, as.name))
+        col_args <- c(poolprev_args, lapply(input$optsColStratify, as.name))
         result(do.call(PoolPrev, col_args))
       }
     } else if (input$optsHierarchy) {
