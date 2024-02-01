@@ -70,7 +70,10 @@ ui <- fluidPage(
                         mainPanel(
                           tabsetPanel(
                               type = "tabs",
-                              tabPanel("Results", dataTableOutput("outAnalyse")),
+                              tabPanel(
+                                "Results",
+                                dataTableOutput("outAnalyse"),
+                                uiOutput("btnDlAnalyse")),
                               tabPanel(
                                 "Help",
                                 h2("How to analyse pooled data"),
@@ -401,6 +404,7 @@ server <- function(input, output, session) {
     if (input$optsHierarchy) {
       bucket_list(
         header = "Hierarchy order",
+        orientation = "horizontal", # doesn't work in sidebar?
         add_rank_list(
           text = "Columns to exclude (e.g. Time)",
           input_id = "_optsHierarchyExclude",
@@ -479,6 +483,20 @@ server <- function(input, output, session) {
       req(result())
       result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRound)))
     })
+
+  output$btnDlAnalyse <- renderUI({
+    req(result())
+    downloadButton("dlAnalyse", "Download results")
+    })
+
+  output$dlAnalyse <- downloadHandler(
+      filename <- function() {
+        paste("results_", Sys.Date(), ".csv", sep = "")
+      },
+      content = function(file) {
+        write.csv(result(), file)
+      }
+  )
 
   ##
   ## Design
