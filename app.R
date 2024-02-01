@@ -105,7 +105,7 @@ ui <- fluidPage(
                       sidebarLayout(
                         sidebarPanel(
 
-                          # 1. Survey options ---------------------------------
+                          # Survey options ------------------------------------
                           selectInput(
                             "optsObjective",
                             tags$span(
@@ -121,127 +121,37 @@ ui <- fluidPage(
                               "Survey mode",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                               ),
-                            choices = c("Select" = "", "Optimise cost", "Calculate power (Coming soon...)")
+                            choices = c(
+                              "Select" = "",
+                              "Identify cost-effective designs",
+                              "Calculate power of existing designs (Coming soon...)"
+                            )
                           ),
 
                           selectInput(
                             "optsTrapping",
                             tags$span(
-                              "Trapping time",
+                              "Sampling strategy",
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            choices = c("Select" = "",  "Fixed period", "Target sample size")
+                            choices = c("Select" = "",  "Fixed sample size", "Fixed sampling period")
                           ),
 
-                          tagList(
-                            checkboxInput(
-                              "optsClustered",
-                              tags$span(
-                                tags$b("Clustered design?"),
-                                tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                ), value = TRUE
-                            ),
-                            tags$hr(style = "border-top: 1px solid #CCC;")
-                          ),
-
-                          # 2. Parameter options ------------------------------
-                          selectInput(
-                            "optsPrevalence",
+                          checkboxInput(
+                            "optsClustered",
                             tags$span(
-                              "Prevalence",
+                              tags$b("Clustered design?"),
                               tipify(icon("info-circle"), "Placeholder", placement = "right")
                             ),
-                            choices = c("Low (0.01%)" = 0.001,
-                                        "Med. (0.5%)" = 0.005,
-                                        "High (2%)" = 0.02,
-                                        "Other" = "other"),
-                            selected = 0.005
-                            ),
-                          conditionalPanel(
-                            condition = "input.optsPrevalence == 'other'",
-                            textInput("optsPrevalenceOther", NULL, placeholder = "Specify %"),
+                            value = TRUE
                           ),
 
-                          conditionalPanel(
-                            condition = "input.optsClustered == true",
-                            selectInput(
-                              "optsCorrelation",
-                              tags$span(
-                                "Within-cluster correlation",
-                                tipify(icon("info-circle"), "Placeholder", placement = "right")
-                              ),
-                              choices = c("Low (1%)" = 0.01,
-                                          "Med. (10%)"= 0.1,
-                                          "High (30%)" = 0.3,
-                                          "Other" = "other"),
-                              selected = 0.1
-                              ),
-                            conditionalPanel(
-                              condition = "input.optsCorrelation == 'other'",
-                              textInput("optsCorrelationOther", NULL, placeholder = "Specify %")
-                            )
-                          ),
-
-                          # 3a. For identifying cost-effective designs --------
-                          conditionalPanel(
-                            condition = "input.optsMode == 'Optimise cost'",
-                            tagList(
-                              tags$hr(style = "border-top: 1px solid #CCC;"),
-                              textInput("optsCostUnit", "Cost per unit"),
-                              textInput("optsCostPool", "Cost per pool"),
-                              # 3a. If clustered
-                              conditionalPanel(
-                                condition = "input.optsClustered == true",
-                                textInput("optsCostCluster", "Cost per cluster")
-                              ),
-                              # 3a. Continue optimise cost settings
-                              textInput("optsMaxPoolSize", "Maximum pool size"),
-
-                              conditionalPanel(
-                                condition = "input.optsTrapping == 'Fixed period",
-                                textInput("optsUnitsMean", "Mean units per cluster")
-                              ),
-
-                            ) # End tagList
-                          ), # 3a. end cost-effective designs
+                          # Main settings -------------------------------------
+                          uiOutput("uiCost"),
+                          uiOutput("uiParams"),
 
 
-                         # # 4b. For evaluating existing designs ---------------
-                         # conditionalPanel(
-                         #   condition = "input.optsMode == 'Calculate power'",
-#
-                         #   # 4bx. Fixed period -------------------------------
-                         #   conditionalPanel(
-                         #     condition = "input.optsTrapping == 'Fixed period'",
-                         #     tagList(
-                         #       tags$hr(style = "border-top: 1px solid #CCC;"),
-                         #       textInput("optsUnitsMean", "Mean units per cluster"),
-                         #       textInput("optsUnitsVar", "Variance of units")
-                         #     )
-                         #   ),
-#
-                         #   # 4by. Target sample size -------------------------
-                         #   conditionalPanel(
-                         #     condition = "input.optsTrapping == 'Target sample size'",
-                         #     tagList(
-                         #       tags$hr(style = "border-top: 1px solid #CCC;"),
-                         #       textInput("optsPoolSize", "Number of units per pool")
-                         #     ),
-#
-                         #     # 4by. Cluster options
-                         #     conditionalPanel(
-                         #       condition = "input.optsClustered == false",
-                         #       textInput("optsPoolNum", "Number of pools")
-                         #     ),
-#
-                         #     conditionalPanel(
-                         #       condition = "input.optsClustered == true",
-                         #       textInput("optsPoolNumClust", "Number of pools per cluster")
-                         #     )
-                         #   ) # End of 4by. Target sample size ----------------
-                         # ), # End of 4b. Evaluating existing designs ---------
-
-                          # 5. Advanced settings ------------------------------
+                          # Advanced settings ------------------------------
 
                           tagList(
                             tags$hr(style = "border-top: 1px solid #CCC;"),
@@ -325,9 +235,7 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, "main_nav", selected = "Design")
   })
 
-  ##
-  ## Analyse: Selecting columns for test result and unit number
-  ##
+  ## ANALYSE ------------------------------------------------------------------
   data <- reactive({
     req(input$fileAnalyse)
     read.csv(input$fileAnalyse$datapath, header = TRUE)
@@ -505,65 +413,62 @@ server <- function(input, output, session) {
       }
   )
 
-  ##
-  ## Design
-  ##
+  ## DESIGN -------------------------------------------------------------------
 
-  design_results <- reactiveVal()
-
-  observeEvent(input$btnDesign, {
-
-    print(
-      input$optsPrevalence,
-      input$optsCostUnit,
-      input$optsCostPool,
-      input$optsCostCluster,
-      input$optsCorrelation,
-      input$optsSensitivity,
-      input$optsSpecificity,
-      input$optsUnitsMean,
-      input$optsMaxPool
-    )
-
-    req(
-      input$optsPrevalence,
-      input$optsCostUnit,
-      input$optsCostPool,
-      input$optsCostCluster,
-      input$optsCorrelation,
-      input$optsSensitivity,
-      input$optsSpecificity,
-      input$optsUnitsMean,
-      input$optsMaxPool
-    )
-
-    out <- optimise_sN_prevalence(
-      prevalence = input$optsPrevalence,
-      cost_unit = input$optsCostUnit,
-      cost_pool = input$optsCostPool,
-      cost_cluster = input$optsCostCluster,
-      correlation = input$optsCorrelation,
-      sensitivity = input$optsSensitivity,
-      specificity = input$optsSpecificity,
-      max_s = input$optsUnitsMean,
-      max_N = input$optsMaxPool,
-      form = "beta"
-    )
-
-    # Update output display only if results
-    req(length(out) > 0)
-    design_results(out)
+  valid_survey <- reactive({
+    !is.null(input$optsObjective) && input$optsObjective != "" &&
+    !is.null(input$optsMode) && input$optsMode != "" &&
+    !is.null(input$optsTrapping) && input$optsTrapping != ""
   })
 
-  output$outDesign <- renderText({
-    if (is.null(design_results())) {
-      return(NULL)
+  valid_cost <- reactive({
+    !is.null(input$optsCostUnit) && input$optsCostUnit != "" &&
+    !is.null(input$optsCostPool) && input$optsCostPool != ""
+  })
+
+  output$uiCost <- renderUI(
+    if (valid_survey()) {
+      tagList(
+        tags$hr(style = "border-top: 1px solid #CCC;"),
+        tags$b("Costs"),
+        tags$br(),
+        tags$span("Input the cost for a single:"),
+        textInput("optsCostUnit", "Unit $"),
+        textInput("optsCostPool", "Cost $"),
+        if (!is.null(input$optsClustered) && input$optsClustered) {
+          textInput("optsCostCluster", "Cluster $")
+        }
+
+      )
     }
-    print(design_results())
+  )
+
+  output$uiParams <- renderUI({
+    if (valid_cost()) {
+      tagList(
+        tags$hr(style = "border-top: 1px solid #CCC;"),
+        tags$b("Design metrics"),
+        tags$br(),
+        tags$br(),
+        selectInput(
+          "optsPrevalence",
+          tags$span(
+            "Prevalence",
+            tipify(icon("info-circle"), "Placeholder", placement = "right")
+          ),
+          choices = c("Low (0.01%)" = 0.001,
+                      "Med. (0.5%)" = 0.005,
+                      "High (2%)" = 0.02,
+                      "Other" = "other"),
+          selected = 0.005
+        )
+      )
+    }
   })
 
 
-}
+
+} # End server()
 
 
 shinyApp(ui = ui, server = server)
