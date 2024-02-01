@@ -372,7 +372,7 @@ server <- function(input, output, session) {
       checkboxInput(
         "optsStratify",
         tags$span(
-          "Stratify data?",
+          tags$b("Stratify data?"),
           tipify(icon("info-circle"), "Uncheck to estimate prevalence on the whole data set", placement = "right")
         )
       )
@@ -381,8 +381,14 @@ server <- function(input, output, session) {
 
   output$colSelectStratify <- renderUI({
     req(data(), input$colTestResults, input$colUnitNumber)
-    if (input$optsStratify) {
-      checkboxGroupInput("optsColStratify", "Stratify data by:", choices = metadata_cols())
+    if (!is.null(input$optsStratify) && input$optsStratify) {
+      checkboxGroupInput(
+        "optsColStratify",
+        tags$span("Stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
+        choices = metadata_cols()
+      )
+    } else {
+      return(NULL)
     }
   })
 
@@ -393,25 +399,26 @@ server <- function(input, output, session) {
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInput("optsHierarchy",
                     tags$span(
-                      "Adjust for hierarchical sampling?",
-                      tipify(icon("info-circle"), "Placeholder", placement = "right")
+                      tags$b("Adjust for hierarchical sampling?"),
+                      tipify(icon("info-circle"), "Placeholder", placement = "right"),
+
                       )
                     )
     )
   })
   output$colHierarchyOrder <- renderUI({
     req(data(), input$colTestResults, input$colUnitNumber)
-    if (input$optsHierarchy) {
+    if (!is.null(input$optsStratify) && input$optsHierarchy) {
       bucket_list(
-        header = "Hierarchy order",
+        header = "Drag to include hierarchical variables and reorder from largest to smallest",
         orientation = "horizontal", # doesn't work in sidebar?
         add_rank_list(
-          text = "Columns to exclude (e.g. Time)",
+          text = "Other variables",
           input_id = "_optsHierarchyExclude",
           labels = metadata_cols()
         ),
         add_rank_list(
-          text = "Drag items here and reorder by hierarchy (largest to smallest)",
+          text = "Hierarchical variables",
           input_id = "optsHierarchyOrder"
           )
       )
