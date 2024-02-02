@@ -495,7 +495,6 @@ server <- function(input, output, session) {
 
 
         # optimise_sN_prevalence ----
-        print(analysis_type()),
         if (!is.null(analysis_type()) && analysis_type() == "optimise_sN_prevalence") {
           tagList(
             textInput("optsMaxS", "Max units per pool", value = 50),
@@ -512,7 +511,51 @@ server <- function(input, output, session) {
     ) # End of tagList()
   })
 
+  design_result <- reactiveVal()
 
+  observeEvent(input$btnDesign, {
+    print(paste("prevalence:", input$optsPrevalence))
+    print(paste("cost_unit:", input$optsCostUnit))
+    print(paste("cost_pool:", input$optsCostPool))
+    print(paste("cost_cluster:", input$optsCostCluster))
+    print(paste("correlation:", input$optsCorrelation))
+    print(paste("sensitivity:", input$optsSensitivity))
+    print(paste("specificity:", input$optsSpecificity))
+    print(paste("max_s:", input$optsMaxS))
+    print(paste("max_N:", input$optsMaxN))
+
+    req(valid_cost())
+    if (input$optsClustered) {
+      # replace with switch
+      req(!is.null(input$optsClustered) && input$optsClustered != "")
+    } else {
+      cluster = NA
+    }
+
+    if (analysis_type() == "optimise_sN_prevalence") {
+      out <- optimise_sN_prevalence(
+        prevalence = as.numeric(input$optsPrevalence),
+        cost_unit = as.numeric(input$optsCostUnit),
+        cost_pool = as.numeric(input$optsCostPool),
+        cost_cluster = if (!is.null(input$optsClustered) && input$optsClustered != "") as.numeric(input$optsCostCluster) else NA,
+        correlation = if (!is.null(input$optsClustered) && input$optsClustered != "") as.numeric(input$optsCorrelation) else NA,
+        sensitivity = as.numeric(input$optsSensitivity),
+        specificity = as.numeric(input$optsSpecificity),
+        max_s = as.numeric(input$optsMaxS),
+        max_N = as.numeric(input$optsMaxN)
+      )
+    }
+
+    design_result(out)
+  })
+
+
+
+  ## Output UI ----
+  output$outDesign <- renderText({
+      req(design_result())
+      paste(design_result())
+  })
 
 } # End server()
 
