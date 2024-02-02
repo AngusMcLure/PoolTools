@@ -159,7 +159,11 @@ ui <- fluidPage(
                         mainPanel(
                           tabsetPanel(
                             type = "tabs",
-                            tabPanel("Results", verbatimTextOutput("outDesign")),
+                            tabPanel(
+                              "Results",
+                              tags$br(),
+                              dataTableOutput("outDesign")
+                            ),
                             tabPanel("Help", NULL)
                           )
                         )
@@ -286,7 +290,7 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings"),
 
-        textInput("optsRound", "Number of decimal places", value = 4),
+        textInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
 
         checkboxInput("optsBayesian", "Bayesian calculations (slow)")
 
@@ -342,7 +346,7 @@ server <- function(input, output, session) {
 
   output$outAnalyse <- renderDataTable({
       req(result())
-      result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRound)))
+      result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
     })
 
   output$btnDlAnalyse <- renderUI({
@@ -500,7 +504,9 @@ server <- function(input, output, session) {
             textInput("optsMaxS", "Max units per pool", value = 50),
             textInput("optsMaxN", "Max pools per cluster", value = 20)
           )
-        }
+        },
+
+        textInput("optsRoundDesign", "Number of decimal places to display", value = 4)
 
 
         # optimise_random_prevalence ----
@@ -514,31 +520,36 @@ server <- function(input, output, session) {
   design_result <- reactiveVal()
 
   observeEvent(input$btnDesign, {
-    print(paste("prevalence:", input$optsPrevalence))
-    print(paste("cost_unit:", input$optsCostUnit))
-    print(paste("cost_pool:", input$optsCostPool))
-    print(paste("cost_cluster:", input$optsCostCluster))
-    print(paste("correlation:", input$optsCorrelation))
-    print(paste("sensitivity:", input$optsSensitivity))
-    print(paste("specificity:", input$optsSpecificity))
-    print(paste("max_s:", input$optsMaxS))
-    print(paste("max_N:", input$optsMaxN))
+    #print(paste("prevalence:", input$optsPrevalence))
+    #print(paste("cost_unit:", input$optsCostUnit))
+    #print(paste("cost_pool:", input$optsCostPool))
+    #print(paste("cost_cluster:", input$optsCostCluster))
+    #print(paste("correlation:", input$optsCorrelation))
+    #print(paste("sensitivity:", input$optsSensitivity))
+    #print(paste("specificity:", input$optsSpecificity))
+    #print(paste("max_s:", input$optsMaxS))
+    #print(paste("max_N:", input$optsMaxN))
 
     req(valid_cost())
     if (input$optsClustered) {
       # replace with switch
       req(!is.null(input$optsClustered) && input$optsClustered != "")
+      rho = as.numeric(input$optsCorrelation)
+      cc = as.numeric(input$optsCostCluster)
     } else {
-      cluster = NA
+      rho = NA
+      cc = NA
     }
 
+    print(paste("rho:", rho))
+    print(paste("cc:", cc))
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- optimise_sN_prevalence(
         prevalence = as.numeric(input$optsPrevalence),
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
-        cost_cluster = if (!is.null(input$optsClustered) && input$optsClustered != "") as.numeric(input$optsCostCluster) else NA,
-        correlation = if (!is.null(input$optsClustered) && input$optsClustered != "") as.numeric(input$optsCorrelation) else NA,
+        cost_cluster = cc,
+        correlation = rho,
         sensitivity = as.numeric(input$optsSensitivity),
         specificity = as.numeric(input$optsSpecificity),
         max_s = as.numeric(input$optsMaxS),
@@ -552,9 +563,27 @@ server <- function(input, output, session) {
 
 
   ## Output UI ----
-  output$outDesign <- renderText({
+  output$outDesign <- renderDataTable({
       req(design_result())
-      paste(design_result())
+      df <-
+        design_result() %>%
+        as.data.frame() %>%
+        mutate(.keep = "none",
+               `Total cost` = round(cost, digits = as.integer(input$optsRoundDesign)),
+               `Optimal pool size` = as.integer(s),
+               `Interval` = as.integer(catch),
+               `Optimal number of pools` = as.integer(N),
+        )
+
+      if (!input$optsClustered) {
+        # catch and N not calculatued
+        df <- df %>% select(-Interval, -`Optimal number of pools`)
+      }
+      datatable(
+        df,
+        options = list(searching = F, lengthChange = F, paging = F, info = F),
+        rownames = F
+      )
   })
 
 } # End server()
