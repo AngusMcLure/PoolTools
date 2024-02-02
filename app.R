@@ -147,64 +147,10 @@ ui <- fluidPage(
                           ),
 
                           # Main settings -------------------------------------
+                          # UI are conditional based on survey options
                           uiOutput("uiCost"),
                           uiOutput("uiParams"),
-
-
-                          # Advanced settings ------------------------------
-
-                          tagList(
-                            tags$hr(style = "border-top: 1px solid #CCC;"),
-                            tags$details(
-                              tags$br(),
-                              tags$summary("Advanced settings"),
-
-                              selectInput(
-                                "optsSensitivity",
-                                tags$span(
-                                  "Sensitivity",
-                                  tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                  ),
-                                choices = c("Low (80%)" = 0.8,
-                                            "Med. (90%)" = 0.9,
-                                            "High (100%)" = 1,
-                                            "Other" = "other"), # 0.5-1
-                                selected = 1
-                              ),
-                              conditionalPanel(
-                                condition = "input.optsSensitivity == 'other'",
-                                textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
-                              ),
-
-
-                              selectInput(
-                                "optsSpecificity",
-                                tags$span(
-                                  "Specificity",
-                                  tipify(icon("info-circle"), "Placeholder", placement = "right")
-                                ),
-                                choices = c("Low (95%)" = 0.95,
-                                            "Med. (99%)" = 0.99,
-                                            "High (100%)" = 1,
-                                            "Other" = "other"), # 0.5-1
-                                selected = 1
-                              ),
-                              conditionalPanel(
-                                condition = "input.optsSpecificity == 'other'",
-                                textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
-                              ),
-
-                              conditionalPanel(
-                                condition = "input.optsTrapping == 'Fixed period'",
-                                textInput("optsUnitsVar", "Variance of units")
-                              )
-
-                                ), # End of tags$details()
-
-                            tags$br()
-
-                          ), # End of tagList()
-
+                          uiOutput("uiAdvanced"),
 
                           actionButton("btnDesign", "Run!")
 
@@ -426,44 +372,144 @@ server <- function(input, output, session) {
     !is.null(input$optsCostPool) && input$optsCostPool != ""
   })
 
-  output$uiCost <- renderUI(
-    if (valid_survey()) {
-      tagList(
-        tags$hr(style = "border-top: 1px solid #CCC;"),
-        tags$b("Costs"),
-        tags$br(),
-        tags$span("Input the cost for a single:"),
-        textInput("optsCostUnit", "Unit $"),
-        textInput("optsCostPool", "Cost $"),
-        if (!is.null(input$optsClustered) && input$optsClustered) {
-          textInput("optsCostCluster", "Cluster $")
-        }
-
-      )
+  analysis_type <- reactive({
+    req(valid_survey())
+    if (input$optsObjective == "Estimate prevalence" &
+        input$optsMode == "Identify cost-effective designs") {
+      if (input$optsTrapping == "Fixed sample size")
+        return("optimise_sN_prevalence")
+      else if (input$optsTrapping == "Fixed sampling period")
+        return("optimise_random_sampling")
     }
-  )
+  })
+
+  output$uiCost <- renderUI({
+    req(valid_survey())
+    # Shared across all analysis types
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      tags$b("Costs"),
+      tags$br(),
+      tags$span("Input the cost for a single:"),
+      textInput("optsCostUnit", "Unit $"),
+      textInput("optsCostPool", "Pool $"),
+      if (!is.null(input$optsClustered) && input$optsClustered) {
+        textInput("optsCostCluster", "Cluster $")
+      }
+    )
+
+  })
 
   output$uiParams <- renderUI({
-    if (valid_cost()) {
-      tagList(
-        tags$hr(style = "border-top: 1px solid #CCC;"),
-        tags$b("Design metrics"),
+    req(valid_cost())
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      tags$b("Design metrics"),
+      tags$br(),
+      tags$br(),
+      selectInput(
+        "optsPrevalence",
+        tags$span(
+          "Prevalence",
+          tipify(icon("info-circle"), "Placeholder", placement = "right")
+        ),
+        choices = c("Low (0.01%)" = 0.001,
+                    "Med. (0.5%)" = 0.005,
+                    "High (2%)" = 0.02,
+                    "Other" = "other"),
+        selected = 0.005
+      ),
+      conditionalPanel(
+        condition = "input.optsPrevalence == 'other'",
+        textInput("optsPrevalenceOther", NULL, placeholder = "Specify %")
+      ),
+      if (input$optsClustered) {
+        tagList(
+          selectInput(
+            "optsCorrelation",
+            tags$span(
+              "Within-cluster correlation",
+              tipify(icon("info-circle"), "Placeholder", placement = "right")
+            ),
+            choices = c("Low (1%)" = 0.01,
+                        "Med. (10%)" = 0.1,
+                        "High (30%)" = 0.3,
+                        "Other" = "other"),
+            selected = 0.1
+          ),
+          conditionalPanel(
+            condition = "input.optsCorrelation == 'other'",
+            textInput("optsCorrelationOther", NULL, placeholder = "Specify %")
+          )
+        )
+      }
+    )
+  })
+
+  output$uiAdvanced <- renderUI({
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      tags$details(
         tags$br(),
-        tags$br(),
+        tags$summary("Advanced settings"),
+
         selectInput(
-          "optsPrevalence",
+          "optsSensitivity",
           tags$span(
-            "Prevalence",
+            "Sensitivity",
             tipify(icon("info-circle"), "Placeholder", placement = "right")
           ),
-          choices = c("Low (0.01%)" = 0.001,
-                      "Med. (0.5%)" = 0.005,
-                      "High (2%)" = 0.02,
-                      "Other" = "other"),
-          selected = 0.005
-        )
-      )
-    }
+          choices = c("Low (80%)" = 0.8,
+                      "Med. (90%)" = 0.9,
+                      "High (100%)" = 1,
+                      "Other" = "other"), # 0.5-1
+          selected = 1
+        ),
+        conditionalPanel(
+          condition = "input.optsSensitivity == 'other'",
+          textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
+        ),
+
+
+        selectInput(
+          "optsSpecificity",
+          tags$span(
+            "Specificity",
+            tipify(icon("info-circle"), "Placeholder", placement = "right")
+          ),
+          choices = c("Low (95%)" = 0.95,
+                      "Med. (99%)" = 0.99,
+                      "High (100%)" = 1,
+                      "Other" = "other"), # 0.5-1
+          selected = 1
+        ),
+        conditionalPanel(
+          condition = "input.optsSpecificity == 'other'",
+          textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
+        ),
+
+        conditionalPanel(
+          condition = "input.optsTrapping == 'Fixed period'",
+          textInput("optsUnitsVar", "Variance of units")
+        ),
+
+
+        # optimise_sN_prevalence ----
+        print(analysis_type()),
+        if (!is.null(analysis_type()) && analysis_type() == "optimise_sN_prevalence") {
+          tagList(
+            textInput("optsMaxS", "Max units per pool", value = 50),
+            textInput("optsMaxN", "Max pools per cluster", value = 20)
+          )
+        }
+
+
+        # optimise_random_prevalence ----
+      ), # End of tags$details()
+
+      tags$br()
+
+    ) # End of tagList()
   })
 
 
