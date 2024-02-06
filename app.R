@@ -148,6 +148,7 @@ ui <- fluidPage(
 
                           # Main settings -------------------------------------
                           # UI are conditional based on survey options
+                          uiOutput("uiRandPrev"),
                           uiOutput("uiCost"),
                           uiOutput("uiParams"),
                           uiOutput("uiAdvanced"),
@@ -374,6 +375,14 @@ server <- function(input, output, session) {
   valid_cost <- reactive({
     !is.null(input$optsCostUnit) && input$optsCostUnit != "" &&
     !is.null(input$optsCostPool) && input$optsCostPool != ""
+    # Add cluster and cost period here?
+  })
+
+  valid_randPrev <- reactive({
+    !is.null(input$optsPoolStrat) && input$optsPoolStrat != "" &&
+    !is.null(input$optsPrm) && input$optsPrm != "" &&
+    !is.null(input$optsCatchMean) && input$optsCatchMean != "" &&
+    !is.null(input$optsCatchVar) && input$optsCatchVar != ""
   })
 
   analysis_type <- reactive({
@@ -383,12 +392,38 @@ server <- function(input, output, session) {
       if (input$optsTrapping == "Fixed sample size")
         return("optimise_sN_prevalence")
       else if (input$optsTrapping == "Fixed sampling period")
-        return("optimise_random_sampling")
+        return("optimise_random_prevalence")
     }
   })
 
+
+  ## RandPrev UI ----
+  output$uiRandPrev <- renderUI({
+    req(analysis_type() == "optimise_random_prevalence")
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      selectInput(
+        "optsPoolStrat",
+        tags$span(
+          "Pooling strategy",
+          tipify(icon("info-circle"), "Placeholder", placement = "right")
+        ),
+        choices = c("Select" = "", "Max size", "Target number")
+      ),
+      textInput("optsPrm", "prm"),
+      textInput("optsCatchMean", "Catch mean"),
+      textInput("optsCatchVar", "Catch variance")
+    )
+  })
+
+
+  ## Cost UI ----
   output$uiCost <- renderUI({
-    req(valid_survey())
+    req(valid_survey(), analysis_type())
+    # Because rand prev has some additional options first
+    print(analysis_type())
+    print(valid_randPrev())
+    if (analysis_type() == "optimise_random_prevalence") req(valid_randPrev())
     # Shared across all analysis types
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
@@ -397,13 +432,22 @@ server <- function(input, output, session) {
       tags$span("Input the cost for a single:"),
       textInput("optsCostUnit", "Unit $"),
       textInput("optsCostPool", "Pool $"),
-      if (!is.null(input$optsClustered) && input$optsClustered) {
+      if (analysis_type() == "optimise_sN_prevalence" & input$optsClustered) {
         textInput("optsCostCluster", "Cluster $")
+      },
+      if (analysis_type() == "optimise_random_prevalence") {
+        textInput(
+          "optsCostPeriod",
+          if (input$optsClustered) "Collection period per cluster $"
+          else "Collection period $"
+        )
       }
     )
 
   })
 
+
+  ## Params UI ----
   output$uiParams <- renderUI({
     req(valid_cost())
     tagList(
@@ -450,6 +494,7 @@ server <- function(input, output, session) {
     )
   })
 
+  ## Advanced settings ----
   output$uiAdvanced <- renderUI({
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
@@ -493,8 +538,8 @@ server <- function(input, output, session) {
         ),
 
         conditionalPanel(
-          condition = "input.optsTrapping == 'Fixed period'",
-          textInput("optsUnitsVar", "Variance of units")
+          condition = "input.optsTrapping == 'Fixed sampling period'",
+          textInput("optsMaxPeriod", "Max sampling period")
         ),
 
 
@@ -553,7 +598,8 @@ server <- function(input, output, session) {
         sensitivity = as.numeric(input$optsSensitivity),
         specificity = as.numeric(input$optsSpecificity),
         max_s = as.numeric(input$optsMaxS),
-        max_N = as.numeric(input$optsMaxN)
+        max_N = as.numeric(input$optsMaxN),
+        form = "logitnorm"
       )
     }
 
@@ -576,7 +622,7 @@ server <- function(input, output, session) {
         )
 
       if (!input$optsClustered) {
-        # catch and N not calculatued
+        # catch and N not calculated
         df <- df %>% select(-Interval, -`Optimal number of pools`)
       }
       datatable(
