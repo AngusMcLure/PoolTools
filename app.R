@@ -3,12 +3,59 @@ library(shinyBS)
 library(sortable)
 library(DT)
 library(dplyr)
+library(shinyFeedback)
 
 library(PoolTestR)
 library(devtools)
 devtools::load_all('~/GitHub/PoolPoweR/')
 
+# Helper functions ----
+is_filled <- function(input) {
+  # Checks for non-empty reactive input
+  !is.null(input) && input != ""
+}
+
+## Input UIs with tooltips ----
+selectInputTT <- function(input_id, label, tooltip, choices, selected = NULL) {
+  selectInput(
+    input_id,
+    tags$span(
+      label,
+      tipify(icon("info-circle"), tooltip, placement = "right")
+    ),
+    choices = choices,
+    selected = selected
+  )
+}
+
+textInputTT <- function(input_id, label, choices, tooltip, value = NULL, placeholder = NULL) {
+  textInput(
+    input_id,
+    tags$span(
+      label,
+      tipify(icon("info-circle"), tooltip, placement = "right")
+    ),
+    value = value,
+    placeholder = placeholder
+  )
+}
+
+checkboxInputTT <- function(input_id, label, tooltip, value = TRUE) {
+  checkboxInput(
+    input_id,
+    tags$span(
+      tags$b(label),
+      tipify(icon("info-circle"), tooltip, placement = "right")
+    ),
+    value = value
+  )
+}
+
+## Input validation ----
+
+# UI ----
 ui <- fluidPage(
+  useShinyFeedback(),
 
   ## Main navbar and pages
   navbarPage("PoolTools", id = "main_nav",
@@ -106,43 +153,22 @@ ui <- fluidPage(
                         sidebarPanel(
 
                           # Survey options ------------------------------------
-                          selectInput(
-                            "optsObjective",
-                            tags$span(
-                              "Survey objective",
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                              ),
+                          selectInputTT("optsObjective", "Survey objective", tooltip = "tooltip",
                             choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
                           ),
-
-                          selectInput(
-                            "optsMode",
-                            tags$span(
-                              "Survey mode",
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                              ),
+                          selectInputTT("optsMode", "Survey mode", tooltip = "tooltip",
                             choices = c(
                               "Select" = "",
                               "Identify cost-effective designs",
                               "Calculate power of existing designs (Coming soon...)"
                             )
                           ),
-
-                          selectInput(
-                            "optsTrapping",
-                            tags$span(
-                              "Sampling strategy",
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                            ),
+                          selectInputTT("optsTrapping", "Sampling strategy", tooltip = "tooltip",
                             choices = c("Select" = "",  "Fixed sample size", "Fixed sampling period")
                           ),
 
-                          checkboxInput(
-                            "optsClustered",
-                            tags$span(
-                              tags$b("Clustered design?"),
-                              tipify(icon("info-circle"), "Placeholder", placement = "right")
-                            ),
+                          checkboxInputTT("optsClustered", "Clustered design?",
+                            tooltip = "tooltip",
                             value = TRUE
                           ),
 
@@ -204,36 +230,25 @@ server <- function(input, output, session) {
   ## Options
   output$colSelectTestResults <- renderUI({
     req(data())
-    selectInput("colTestResults",
-                tags$span(
-                  "Test results",
-                  tipify(icon("info-circle"), "Placeholder", placement = "right")
-                  ),
-                choices = c("Select column" = "", names(data()))
-                )
+    selectInputTT("colTestResults", "Test results", tooltip = "tooltip",
+      choices = c("Select column" = "", names(data()))
+    )
   })
   output$colSelectUnitNumber <- renderUI({
     req(data())
     cols <- names(data())
     cols <- cols[!cols %in% input$colTestResults]
-    selectInput("colUnitNumber",
-                tags$span(
-                  "Number of specimens per pool",
-                  tipify(icon("info-circle"), "Placeholder", placement = "right")
-                  ),
-                choices = c("Select column" = "", cols)
-                )
+    selectInputTT("colUnitNumber", "Number of specimens per pool", tooltip = "tooltip",
+      choices = c("Select column" = "", cols)
+    )
   })
   output$checkStratify <- renderUI({
     req(data(), input$colTestResults, input$colUnitNumber)
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInput(
-        "optsStratify",
-        tags$span(
-          tags$b("Stratify data?"),
-          tipify(icon("info-circle"), "Uncheck to estimate prevalence on the whole data set", placement = "right")
-        )
+      checkboxInputTT("optsStratify", "Stratify data?",
+        tooltip = "Uncheck to estimate prevalence on the whole data set",
+        value = T
       )
     )
   })
@@ -256,13 +271,9 @@ server <- function(input, output, session) {
     req(data(), input$colTestResults, input$colUnitNumber)
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInput("optsHierarchy",
-                    tags$span(
-                      tags$b("Adjust for hierarchical sampling?"),
-                      tipify(icon("info-circle"), "Placeholder", placement = "right"),
-
-                      )
-                    )
+      checkboxInput("optsHierarchy", "Adjust for hierarchical sampling?",
+                    tooltip = "tooltip", value = FALSE
+      )
     )
   })
   output$colHierarchyOrder <- renderUI({
@@ -291,7 +302,7 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings"),
 
-        textInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
+        numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
 
         checkboxInput("optsBayesian", "Bayesian calculations (slow)")
 
@@ -367,21 +378,21 @@ server <- function(input, output, session) {
   ## DESIGN -------------------------------------------------------------------
 
   valid_survey <- reactive({
-    !is.null(input$optsObjective) && input$optsObjective != "" &&
-    !is.null(input$optsMode) && input$optsMode != "" &&
-    !is.null(input$optsTrapping) && input$optsTrapping != ""
+    is_filled(input$optsObjective) &&
+    is_filled(input$optsMode) &&
+    is_filled(input$optsTrapping)
   })
 
   valid_cost <- reactive({
-    !is.null(input$optsCostUnit) && input$optsCostUnit != "" &&
-    !is.null(input$optsCostPool) && input$optsCostPool != ""
+    is_filled(input$optsCostUnit) &&
+    is_filled(input$optsCostPool)
     # Add cluster and cost period here?
   })
 
   valid_randPrev <- reactive({
-    !is.null(input$optsPoolStrat) && input$optsPoolStrat != "" &&
-    !is.null(input$optsCatchMean) && input$optsCatchMean != "" &&
-    !is.null(input$optsCatchVar) && input$optsCatchVar != ""
+    is_filled(input$optsPoolStrat) &&
+    is_filled(input$optsCatchMean) &&
+    is_filled(input$optsCatchVar)
   })
 
   analysis_type <- reactive({
@@ -401,20 +412,15 @@ server <- function(input, output, session) {
     req(analysis_type() == "optimise_random_prevalence")
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      selectInput(
-        "optsPoolStrat",
-        tags$span(
-          "Pooling strategy",
-          tipify(icon("info-circle"), "Placeholder", placement = "right")
-        ),
+      selectInputTT("optsPoolStrat", "Pooling strategy", tooltip = "tooltip",
         choices = c(
           "Select" = "",
-          "Max size" ="pool_max_size",
+          "Max size" = "pool_max_size",
           "Target number" = "pool_target_number"
         )
       ),
-      textInput("optsCatchMean", "Catch mean"),
-      textInput("optsCatchVar", "Catch variance")
+      numericInput("optsCatchMean", "Catch mean", value = NULL, min = 1, step = 1),
+      numericInput("optsCatchVar", "Catch variance", value = NULL, min = 2, step = 1)
     )
   })
 
@@ -432,13 +438,13 @@ server <- function(input, output, session) {
       tags$b("Costs"),
       tags$br(),
       tags$span("Input the cost for a single:"),
-      textInput("optsCostUnit", "Unit $"),
-      textInput("optsCostPool", "Pool $"),
+      numericInput("optsCostUnit", "Unit $", value = NULL, min = 1e-6, step = 0.5),
+      numericInput("optsCostPool", "Pool $", value = NULL, min = 1e-6, step = 0.5),
       if (input$optsClustered) {
-        textInput("optsCostCluster", "Cluster $")
+        numericInput("optsCostCluster", "Cluster $", value = NULL, min = 1e-6, step = 0.5)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        textInput("optsCostPeriod", "Collection period $")
+        numericInput("optsCostPeriod", "Collection period $", value = NULL, min = 1e-6, step = 0.5)
       }
     )
 
@@ -453,12 +459,7 @@ server <- function(input, output, session) {
       tags$b("Design metrics"),
       tags$br(),
       tags$br(),
-      selectInput(
-        "optsPrevalence",
-        tags$span(
-          "Prevalence",
-          tipify(icon("info-circle"), "Placeholder", placement = "right")
-        ),
+      selectInputTT("optsPrevalence", "Prevalence", tooltip = "tooltip",
         choices = c("Low (0.01%)" = 0.001,
                     "Med. (0.5%)" = 0.005,
                     "High (2%)" = 0.02,
@@ -467,16 +468,12 @@ server <- function(input, output, session) {
       ),
       conditionalPanel(
         condition = "input.optsPrevalence == 'other'",
-        textInput("optsPrevalenceOther", NULL, placeholder = "Specify %")
+        numericInput("optsPrevalenceOther", NULL, value = 0.5, min = 1e-6, max = 50, step = 0.01)
       ),
       if (input$optsClustered) {
         tagList(
-          selectInput(
-            "optsCorrelation",
-            tags$span(
-              "Within-cluster correlation",
-              tipify(icon("info-circle"), "Placeholder", placement = "right")
-            ),
+          selectInputTT("optsCorrelation", "Within-cluster correlation",
+                        tooltip = "(0-100%) The correlation between test results within a single cluster. 100% indicates that there are no differentces between units within a single cluster.",
             choices = c("Low (1%)" = 0.01,
                         "Med. (10%)" = 0.1,
                         "High (30%)" = 0.3,
@@ -485,7 +482,7 @@ server <- function(input, output, session) {
           ),
           conditionalPanel(
             condition = "input.optsCorrelation == 'other'",
-            textInput("optsCorrelationOther", NULL, placeholder = "Specify %")
+            numericInput("optsCorrelationOther", NULL, value = 30, min = 1e-6, max = 50, step = 0.01)
           )
         )
       }
@@ -500,12 +497,8 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings"),
 
-        selectInput(
-          "optsSensitivity",
-          tags$span(
-            "Sensitivity",
-            tipify(icon("info-circle"), "Placeholder", placement = "right")
-          ),
+        selectInputTT("optsSensitivity", "Sensitivity",
+          tooltip = "(0-100%) The probability that the test correctly identifies a true positive. 100% indicates that the test can perfectly identify all true positives.",
           choices = c("Low (80%)" = 0.8,
                       "Med. (90%)" = 0.9,
                       "High (100%)" = 1,
@@ -514,16 +507,12 @@ server <- function(input, output, session) {
         ),
         conditionalPanel(
           condition = "input.optsSensitivity == 'other'",
-          textInput("optsSensitivityOther", NULL, placeholder = "Specify %")
+          numericInput("optsSensitivityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
         ),
 
 
-        selectInput(
-          "optsSpecificity",
-          tags$span(
-            "Specificity",
-            tipify(icon("info-circle"), "Placeholder", placement = "right")
-          ),
+        selectInputTT("optsSpecificity", "Specificity",
+          tooltip = "(0-100%) The probability that the test correctly identifies a true negative. 100% indicates that the test can perfectly identify all true negatives.",
           choices = c("Low (95%)" = 0.95,
                       "Med. (99%)" = 0.99,
                       "High (100%)" = 1,
@@ -532,24 +521,24 @@ server <- function(input, output, session) {
         ),
         conditionalPanel(
           condition = "input.optsSpecificity == 'other'",
-          textInput("optsSpecificityOther", NULL, placeholder = "Specify %")
+          numericInput("optsSpecificityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
         ),
 
         conditionalPanel(
           condition = "input.optsTrapping == 'Fixed sampling period'",
-          textInput("optsMaxPeriod", "Max sampling period", value = 10)
+          numericInput("optsMaxPeriod", "Max sampling period", value = 10, min = 1, step = 1)
         ),
 
 
         # optimise_sN_prevalence ----
         if (!is.null(analysis_type()) && analysis_type() == "optimise_sN_prevalence") {
           tagList(
-            textInput("optsMaxS", "Max units per pool", value = 50),
-            textInput("optsMaxN", "Max pools per cluster", value = 20)
+            numericInput("optsMaxS", "Max units per pool", value = 50, min = 1, step = 1),
+            numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
           )
         },
 
-        textInput("optsRoundDesign", "Number of decimal places to display", value = 4)
+        numericInput("optsRoundDesign", "Number of decimal places to display", value = 4)
 
 
         # optimise_random_prevalence ----
@@ -560,7 +549,8 @@ server <- function(input, output, session) {
     ) # End of tagList()
   })
 
-  design_result <- reactiveVal()
+  result_sN <- reactiveVal()
+  result_randPrev <- reactiveVal()
 
   observeEvent(input$btnDesign, {
     #print(paste("prevalence:", input$optsPrevalence))
@@ -606,13 +596,14 @@ server <- function(input, output, session) {
           .keep = "none",
           `Total cost` = round(cost, digits = as.integer(input$optsRoundDesign)),
           `Optimal pool size` = as.integer(s),
-          `Interval` = as.integer(catch),
+          `Catch` = as.integer(catch),
           `Optimal number of pools` = as.integer(N),
         )
       if (!input$optsClustered) {
         # catch and N not calculated
-        out <- out %>% select(-Interval, -`Optimal number of pools`)
+        out <- out %>% select(-Catch, -`Optimal number of pools`)
       }
+      result_sN(out)
     }
 
 
@@ -633,28 +624,27 @@ server <- function(input, output, session) {
         form = "logitnorm",
         verbose = FALSE
       )
+      result_randPrev(out)
     }
 
-    design_result(out)
   })
 
   output$designTable <- renderDataTable({
-    req(design_result(), analysis_type() == "optimise_sN_prevalence")
+    req(result_sN())
     datatable(
-      design_result(), # Ensure this returns a data frame
+      result_sN(), # Ensure this returns a data frame
       options = list(searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE),
       rownames = FALSE
     )
   })
 
   output$designText <- renderPrint({
-    req(design_result(), analysis_type() == "optimise_random_prevalence")
-    design_result() %>% unlist()
+    req(result_randPrev())
+    result_randPrev() %>% unlist()
   })
 
   ## Output UI ----
   output$outDesign <- renderUI({
-    req(design_result())
     if (analysis_type() == "optimise_sN_prevalence") {
       dataTableOutput("designTable")
     } else if (analysis_type () == "optimise_random_prevalence") {
