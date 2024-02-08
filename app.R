@@ -434,15 +434,11 @@ server <- function(input, output, session) {
       tags$span("Input the cost for a single:"),
       textInput("optsCostUnit", "Unit $"),
       textInput("optsCostPool", "Pool $"),
-      if (analysis_type() == "optimise_sN_prevalence" & input$optsClustered) {
+      if (input$optsClustered) {
         textInput("optsCostCluster", "Cluster $")
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        textInput(
-          "optsCostPeriod",
-          if (input$optsClustered) "Collection period per cluster $"
-          else "Collection period $"
-        )
+        textInput("optsCostPeriod", "Collection period $")
       }
     )
 
@@ -621,13 +617,11 @@ server <- function(input, output, session) {
 
 
     if (analysis_type() == "optimise_random_prevalence") {
-      # Deal with pool strat family
-      print(input$optsPoolStrat)
       out <- optimise_random_prevalence(
         catch_mean = as.numeric(input$optsCatchMean),
         catch_variance = as.numeric(input$optsCatchVar),
         pool_strat_family = get(input$optsPoolStrat),
-        prevalence = as.numeric(input$optsCatchVar),
+        prevalence = as.numeric(input$optsPrevalence),
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_period = as.numeric(input$optsCostPeriod),
