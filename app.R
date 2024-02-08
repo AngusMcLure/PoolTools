@@ -163,7 +163,7 @@ ui <- fluidPage(
                             tabPanel(
                               "Results",
                               tags$br(),
-                              dataTableOutput("outDesign")
+                              uiOutput("outDesign")
                             ),
                             tabPanel("Help", NULL)
                           )
@@ -380,7 +380,6 @@ server <- function(input, output, session) {
 
   valid_randPrev <- reactive({
     !is.null(input$optsPoolStrat) && input$optsPoolStrat != "" &&
-    !is.null(input$optsPrm) && input$optsPrm != "" &&
     !is.null(input$optsCatchMean) && input$optsCatchMean != "" &&
     !is.null(input$optsCatchVar) && input$optsCatchVar != ""
   })
@@ -408,9 +407,12 @@ server <- function(input, output, session) {
           "Pooling strategy",
           tipify(icon("info-circle"), "Placeholder", placement = "right")
         ),
-        choices = c("Select" = "", "Max size", "Target number")
+        choices = c(
+          "Select" = "",
+          "Max size" ="pool_max_size",
+          "Target number" = "pool_target_number"
+        )
       ),
-      textInput("optsPrm", "prm"),
       textInput("optsCatchMean", "Catch mean"),
       textInput("optsCatchVar", "Catch variance")
     )
@@ -539,7 +541,7 @@ server <- function(input, output, session) {
 
         conditionalPanel(
           condition = "input.optsTrapping == 'Fixed sampling period'",
-          textInput("optsMaxPeriod", "Max sampling period")
+          textInput("optsMaxPeriod", "Max sampling period", value = 10)
         ),
 
 
@@ -601,35 +603,70 @@ server <- function(input, output, session) {
         max_N = as.numeric(input$optsMaxN),
         form = "logitnorm"
       )
+      out <-
+        out %>%
+        as.data.frame() %>%
+        mutate(
+          .keep = "none",
+          `Total cost` = round(cost, digits = as.integer(input$optsRoundDesign)),
+          `Optimal pool size` = as.integer(s),
+          `Interval` = as.integer(catch),
+          `Optimal number of pools` = as.integer(N),
+        )
+      if (!input$optsClustered) {
+        # catch and N not calculated
+        out <- out %>% select(-Interval, -`Optimal number of pools`)
+      }
+    }
+
+
+    if (analysis_type() == "optimise_random_prevalence") {
+      # Deal with pool strat family
+      print(input$optsPoolStrat)
+      out <- optimise_random_prevalence(
+        catch_mean = as.numeric(input$optsCatchMean),
+        catch_variance = as.numeric(input$optsCatchVar),
+        pool_strat_family = get(input$optsPoolStrat),
+        prevalence = as.numeric(input$optsCatchVar),
+        cost_unit = as.numeric(input$optsCostUnit),
+        cost_pool = as.numeric(input$optsCostPool),
+        cost_period = as.numeric(input$optsCostPeriod),
+        cost_cluster = cc,
+        correlation = rho,
+        sensitivity = as.numeric(input$optsSensitivity),
+        specificity = as.numeric(input$optsSpecificity),
+        max_period = as.numeric(input$optsMaxPeriod),
+        form = "logitnorm",
+        verbose = FALSE
+      )
     }
 
     design_result(out)
   })
 
+  output$designTable <- renderDataTable({
+    req(design_result(), analysis_type() == "optimise_sN_prevalence")
+    datatable(
+      design_result(), # Ensure this returns a data frame
+      options = list(searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE),
+      rownames = FALSE
+    )
+  })
 
+  output$designText <- renderPrint({
+    req(design_result(), analysis_type() == "optimise_random_prevalence")
+    design_result() %>% unlist()
+  })
 
   ## Output UI ----
-  output$outDesign <- renderDataTable({
-      req(design_result())
-      df <-
-        design_result() %>%
-        as.data.frame() %>%
-        mutate(.keep = "none",
-               `Total cost` = round(cost, digits = as.integer(input$optsRoundDesign)),
-               `Optimal pool size` = as.integer(s),
-               `Interval` = as.integer(catch),
-               `Optimal number of pools` = as.integer(N),
-        )
+  output$outDesign <- renderUI({
+    req(design_result())
+    if (analysis_type() == "optimise_sN_prevalence") {
+      dataTableOutput("designTable")
+    } else if (analysis_type () == "optimise_random_prevalence") {
+      verbatimTextOutput("designText")
+    }
 
-      if (!input$optsClustered) {
-        # catch and N not calculated
-        df <- df %>% select(-Interval, -`Optimal number of pools`)
-      }
-      datatable(
-        df,
-        options = list(searching = F, lengthChange = F, paging = F, info = F),
-        rownames = F
-      )
   })
 
 } # End server()
