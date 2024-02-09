@@ -7,7 +7,7 @@ library(shinyFeedback)
 
 library(PoolTestR)
 library(devtools)
-devtools::load_all('~/GitHub/PoolPoweR/')
+devtools::load_all("~/GitHub/PoolPoweR/")
 
 # Helper functions ----
 is_filled <- function(input) {
@@ -58,149 +58,149 @@ ui <- fluidPage(
   useShinyFeedback(),
 
   ## Main navbar and pages
-  navbarPage("PoolTools", id = "main_nav",
-
-
-             tabPanel("Home",
-                      fluidRow(
-                        column(
-                          width = 4,
-                          style = "text-align: center;",
-                          p("To estimate marker prevalence from", tags$br(),
-                            "pooled test results, select:"),
-                          actionButton("btnAnalysePage", "Analyse pooled data"),
-                        ),
-                        column(
-                          width = 4,
-                          style = "text-align: center;",
-                          p("To design cost-effective tests, or evaluate", tags$br(),
-                            "the power of an existing design, select:"),
-                          actionButton("btnDesignPage", "Design a pooled survey")
-                        )
-                      )
-                    ),
-
-            tabPanel("About",
-                     h2("About PoolTools"),
-                     h3("How to cite"),
-                     h3("Relevant papers"),
-                     h3("Contact"),
-                     h3("Credits and acknowledgements")
-                     ),
-
-
-             tabPanel("Analyse",
-                      h2("Analyse pooled data"),
-                      br(),
-
-                      sidebarLayout(
-                        sidebarPanel(
-                          fileInput(
-                            "fileAnalyse",
-                            accept = ".csv",
-                            tags$span(
-                              "Upload data",
-                              tipify(icon("info-circle"), "Must be a .csv file", placement = "right")
-                              )
-                          ),
-                          uiOutput("colSelectTestResults"),
-                          uiOutput("colSelectUnitNumber"),
-                          uiOutput("checkStratify"),
-                          uiOutput("colSelectStratify"),
-                          uiOutput("checkHierarchy"),
-                          uiOutput("colHierarchyOrder"),
-                          uiOutput("optsSettings"),
-                          uiOutput("btnAnalyse")
-                      ),
-
-
-                        mainPanel(
-                          tabsetPanel(
-                              type = "tabs",
-                              tabPanel(
-                                "Results",
-                                dataTableOutput("outAnalyse"),
-                                uiOutput("btnDlAnalyse")),
-                              tabPanel(
-                                "Help",
-                                h2("How to analyse pooled data"),
-                                p("This mode estimates the prevalence of a
+  navbarPage("PoolTools",
+    id = "main_nav",
+    tabPanel(
+      "Home",
+      fluidRow(
+        column(
+          width = 4,
+          style = "text-align: center;",
+          p(
+            "To estimate marker prevalence from", tags$br(),
+            "pooled test results, select:"
+          ),
+          actionButton("btnAnalysePage", "Analyse pooled data"),
+        ),
+        column(
+          width = 4,
+          style = "text-align: center;",
+          p(
+            "To design cost-effective tests, or evaluate", tags$br(),
+            "the power of an existing design, select:"
+          ),
+          actionButton("btnDesignPage", "Design a pooled survey")
+        )
+      )
+    ),
+    tabPanel(
+      "About",
+      h2("About PoolTools"),
+      h3("How to cite"),
+      h3("Relevant papers"),
+      h3("Contact"),
+      h3("Credits and acknowledgements")
+    ),
+    tabPanel(
+      "Analyse",
+      h2("Analyse pooled data"),
+      br(),
+      sidebarLayout(
+        sidebarPanel(
+          fileInput(
+            "fileAnalyse",
+            accept = ".csv",
+            tags$span(
+              "Upload data",
+              tipify(icon("info-circle"), "Must be a .csv file", placement = "right")
+            )
+          ),
+          uiOutput("colSelectTestResults"),
+          uiOutput("colSelectUnitNumber"),
+          uiOutput("checkStratify"),
+          uiOutput("colSelectStratify"),
+          uiOutput("checkHierarchy"),
+          uiOutput("colHierarchyOrder"),
+          uiOutput("optsSettings"),
+          uiOutput("btnAnalyse")
+        ),
+        mainPanel(
+          tabsetPanel(
+            type = "tabs",
+            tabPanel(
+              "Results",
+              dataTableOutput("outAnalyse"),
+              uiOutput("btnDlAnalyse")
+            ),
+            tabPanel(
+              "Help",
+              h2("How to analyse pooled data"),
+              p("This mode estimates the prevalence of a
                                   marker in a population based on tests performed
                                   on pooled samples."),
-                                p("The marker prevalence can be estimated across
+              p("The marker prevalence can be estimated across
                                   different categories, such as per-site or
                                   per-village, if provided."),
-                                p("Lastly, a hierarchical model can be applied
+              p("Lastly, a hierarchical model can be applied
                                   to avoid biased prevalence estimates."),
-                                h3("Basic usage"),
-                                tags$ul(
-                                  tags$li("Input data requirements"),
-                                  tags$li("Column selection"),
-                                  tags$li("Estimate prevalence settings (PoolPrev)"),
-                                  tags$li("Adjust for hierarchial sampling (HierPoolPrev)"),
-                                  tags$li("Advanced settings")
-                                )
-                              )
-                            )
-                        )
-                      )
-             ),
+              h3("Basic usage"),
+              tags$ul(
+                tags$li("Input data requirements"),
+                tags$li("Column selection"),
+                tags$li("Estimate prevalence settings (PoolPrev)"),
+                tags$li("Adjust for hierarchial sampling (HierPoolPrev)"),
+                tags$li("Advanced settings")
+              )
+            )
+          )
+        )
+      )
+    ),
+    tabPanel(
+      "Design",
+      h2("Design a pooled survey"),
+      br(),
+      sidebarLayout(
+        sidebarPanel(
 
-             tabPanel("Design",
-                      h2("Design a pooled survey"),
-                      br(),
-                      sidebarLayout(
-                        sidebarPanel(
+          # Survey options ------------------------------------
+          selectInputTT("optsObjective", "Survey objective",
+            tooltip = "tooltip",
+            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
+          ),
+          selectInputTT("optsMode", "Survey mode",
+            tooltip = "tooltip",
+            choices = c(
+              "Select" = "",
+              "Identify cost-effective designs",
+              "Calculate power of existing designs (Coming soon...)"
+            )
+          ),
+          selectInputTT("optsTrapping", "Sampling strategy",
+            tooltip = "tooltip",
+            choices = c("Select" = "", "Fixed sample size", "Fixed sampling period")
+          ),
+          checkboxInputTT("optsClustered", "Clustered design?",
+            tooltip = "tooltip",
+            value = TRUE
+          ),
 
-                          # Survey options ------------------------------------
-                          selectInputTT("optsObjective", "Survey objective", tooltip = "tooltip",
-                            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
-                          ),
-                          selectInputTT("optsMode", "Survey mode", tooltip = "tooltip",
-                            choices = c(
-                              "Select" = "",
-                              "Identify cost-effective designs",
-                              "Calculate power of existing designs (Coming soon...)"
-                            )
-                          ),
-                          selectInputTT("optsTrapping", "Sampling strategy", tooltip = "tooltip",
-                            choices = c("Select" = "",  "Fixed sample size", "Fixed sampling period")
-                          ),
+          # Main settings -------------------------------------
+          # UI are conditional based on survey options
+          uiOutput("uiRandPrev"),
+          uiOutput("uiCost"),
+          uiOutput("uiParams"),
+          uiOutput("uiAdvanced"),
+          actionButton("btnDesign", "Run!")
+        ), # End of sidebarPanel ------------------------------
 
-                          checkboxInputTT("optsClustered", "Clustered design?",
-                            tooltip = "tooltip",
-                            value = TRUE
-                          ),
-
-                          # Main settings -------------------------------------
-                          # UI are conditional based on survey options
-                          uiOutput("uiRandPrev"),
-                          uiOutput("uiCost"),
-                          uiOutput("uiParams"),
-                          uiOutput("uiAdvanced"),
-
-                          actionButton("btnDesign", "Run!")
-
-                        ), # End of sidebarPanel ------------------------------
-
-                        mainPanel(
-                          tabsetPanel(
-                            type = "tabs",
-                            tabPanel(
-                              "Results",
-                              tags$br(),
-                              uiOutput("outDesign")
-                            ),
-                            tabPanel("Help", NULL)
-                          )
-                        )
-                      ) # End of sidebarLayout -------------------------------
-             )
+        mainPanel(
+          tabsetPanel(
+            type = "tabs",
+            tabPanel(
+              "Results",
+              tags$br(),
+              uiOutput("outDesign")
+            ),
+            tabPanel("Help", NULL)
+          )
+        )
+      ) # End of sidebarLayout -------------------------------
+    )
   )
 )
 
 server <- function(input, output, session) {
-
   ##
   ## Home page buttons
   ##
@@ -230,7 +230,8 @@ server <- function(input, output, session) {
   ## Options
   output$colSelectTestResults <- renderUI({
     req(data())
-    selectInputTT("colTestResults", "Test results", tooltip = "tooltip",
+    selectInputTT("colTestResults", "Test results",
+      tooltip = "tooltip",
       choices = c("Select column" = "", names(data()))
     )
   })
@@ -238,7 +239,8 @@ server <- function(input, output, session) {
     req(data())
     cols <- names(data())
     cols <- cols[!cols %in% input$colTestResults]
-    selectInputTT("colUnitNumber", "Number of specimens per pool", tooltip = "tooltip",
+    selectInputTT("colUnitNumber", "Number of specimens per pool",
+      tooltip = "tooltip",
       choices = c("Select column" = "", cols)
     )
   })
@@ -272,7 +274,7 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInput("optsHierarchy", "Adjust for hierarchical sampling?",
-                    tooltip = "tooltip", value = FALSE
+        tooltip = "tooltip", value = FALSE
       )
     )
   })
@@ -290,7 +292,7 @@ server <- function(input, output, session) {
         add_rank_list(
           text = "Hierarchical variables",
           input_id = "optsHierarchyOrder"
-          )
+        )
       )
     }
   })
@@ -301,11 +303,8 @@ server <- function(input, output, session) {
       tags$details(
         tags$br(),
         tags$summary("Advanced settings"),
-
         numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
-
         checkboxInput("optsBayesian", "Bayesian calculations (slow)")
-
       ),
       tags$br()
     )
@@ -334,8 +333,8 @@ server <- function(input, output, session) {
       poolprev_args <- req_args
       poolprev_args$bayesian <- input$optsBayesian
       if (is.null(input$optsColStratify)) {
-      # Estimate prevalence on whole data
-      result(do.call(PoolPrev, poolprev_args))
+        # Estimate prevalence on whole data
+        result(do.call(PoolPrev, poolprev_args))
       } else {
         # Estimate prevalence for each selected column (stratified)
         # Parse arguments
@@ -352,57 +351,59 @@ server <- function(input, output, session) {
       }
       print(hier_args)
       result(do.call(HierPoolPrev, hier_args))
+    } else {
+      result(NULL)
     }
-    else result(NULL)
   })
 
   output$outAnalyse <- renderDataTable({
-      req(result())
-      result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
-    })
+    req(result())
+    result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+  })
 
   output$btnDlAnalyse <- renderUI({
     req(result())
     downloadButton("dlAnalyse", "Download results")
-    })
+  })
 
   output$dlAnalyse <- downloadHandler(
-      filename <- function() {
-        paste("results_", Sys.Date(), ".csv", sep = "")
-      },
-      content = function(file) {
-        write.csv(result(), file)
-      }
+    filename <- function() {
+      paste("results_", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(result(), file)
+    }
   )
 
   ## DESIGN -------------------------------------------------------------------
 
   valid_survey <- reactive({
     is_filled(input$optsObjective) &&
-    is_filled(input$optsMode) &&
-    is_filled(input$optsTrapping)
+      is_filled(input$optsMode) &&
+      is_filled(input$optsTrapping)
   })
 
   valid_cost <- reactive({
     is_filled(input$optsCostUnit) &&
-    is_filled(input$optsCostPool)
+      is_filled(input$optsCostPool)
     # Add cluster and cost period here?
   })
 
   valid_randPrev <- reactive({
     is_filled(input$optsPoolStrat) &&
-    is_filled(input$optsCatchMean) &&
-    is_filled(input$optsCatchVar)
+      is_filled(input$optsCatchMean) &&
+      is_filled(input$optsCatchVar)
   })
 
   analysis_type <- reactive({
     req(valid_survey())
     if (input$optsObjective == "Estimate prevalence" &
-        input$optsMode == "Identify cost-effective designs") {
-      if (input$optsTrapping == "Fixed sample size")
+      input$optsMode == "Identify cost-effective designs") {
+      if (input$optsTrapping == "Fixed sample size") {
         return("optimise_sN_prevalence")
-      else if (input$optsTrapping == "Fixed sampling period")
+      } else if (input$optsTrapping == "Fixed sampling period") {
         return("optimise_random_prevalence")
+      }
     }
   })
 
@@ -412,7 +413,8 @@ server <- function(input, output, session) {
     req(analysis_type() == "optimise_random_prevalence")
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      selectInputTT("optsPoolStrat", "Pooling strategy", tooltip = "tooltip",
+      selectInputTT("optsPoolStrat", "Pooling strategy",
+        tooltip = "tooltip",
         choices = c(
           "Select" = "",
           "Max size" = "pool_max_size",
@@ -447,7 +449,6 @@ server <- function(input, output, session) {
         numericInput("optsCostPeriod", "Collection period $", value = NULL, min = 1e-6, step = 0.5)
       }
     )
-
   })
 
 
@@ -459,11 +460,14 @@ server <- function(input, output, session) {
       tags$b("Design metrics"),
       tags$br(),
       tags$br(),
-      selectInputTT("optsPrevalence", "Prevalence", tooltip = "tooltip",
-        choices = c("Low (0.01%)" = 0.001,
-                    "Med. (0.5%)" = 0.005,
-                    "High (2%)" = 0.02,
-                    "Other" = "other"),
+      selectInputTT("optsPrevalence", "Prevalence",
+        tooltip = "tooltip",
+        choices = c(
+          "Low (0.01%)" = 0.001,
+          "Med. (0.5%)" = 0.005,
+          "High (2%)" = 0.02,
+          "Other" = "other"
+        ),
         selected = 0.005
       ),
       conditionalPanel(
@@ -473,11 +477,13 @@ server <- function(input, output, session) {
       if (input$optsClustered) {
         tagList(
           selectInputTT("optsCorrelation", "Within-cluster correlation",
-                        tooltip = "(0-100%) The correlation between test results within a single cluster. 100% indicates that there are no differentces between units within a single cluster.",
-            choices = c("Low (1%)" = 0.01,
-                        "Med. (10%)" = 0.1,
-                        "High (30%)" = 0.3,
-                        "Other" = "other"),
+            tooltip = "(0-100%) The correlation between test results within a single cluster. 100% indicates that there are no differentces between units within a single cluster.",
+            choices = c(
+              "Low (1%)" = 0.01,
+              "Med. (10%)" = 0.1,
+              "High (30%)" = 0.3,
+              "Other" = "other"
+            ),
             selected = 0.1
           ),
           conditionalPanel(
@@ -496,34 +502,34 @@ server <- function(input, output, session) {
       tags$details(
         tags$br(),
         tags$summary("Advanced settings"),
-
         selectInputTT("optsSensitivity", "Sensitivity",
           tooltip = "(0-100%) The probability that the test correctly identifies a true positive. 100% indicates that the test can perfectly identify all true positives.",
-          choices = c("Low (80%)" = 0.8,
-                      "Med. (90%)" = 0.9,
-                      "High (100%)" = 1,
-                      "Other" = "other"), # 0.5-1
+          choices = c(
+            "Low (80%)" = 0.8,
+            "Med. (90%)" = 0.9,
+            "High (100%)" = 1,
+            "Other" = "other"
+          ), # 0.5-1
           selected = 1
         ),
         conditionalPanel(
           condition = "input.optsSensitivity == 'other'",
           numericInput("optsSensitivityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
         ),
-
-
         selectInputTT("optsSpecificity", "Specificity",
           tooltip = "(0-100%) The probability that the test correctly identifies a true negative. 100% indicates that the test can perfectly identify all true negatives.",
-          choices = c("Low (95%)" = 0.95,
-                      "Med. (99%)" = 0.99,
-                      "High (100%)" = 1,
-                      "Other" = "other"), # 0.5-1
+          choices = c(
+            "Low (95%)" = 0.95,
+            "Med. (99%)" = 0.99,
+            "High (100%)" = 1,
+            "Other" = "other"
+          ), # 0.5-1
           selected = 1
         ),
         conditionalPanel(
           condition = "input.optsSpecificity == 'other'",
           numericInput("optsSpecificityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
         ),
-
         conditionalPanel(
           condition = "input.optsTrapping == 'Fixed sampling period'",
           numericInput("optsMaxPeriod", "Max sampling period", value = 10, min = 1, step = 1)
@@ -537,7 +543,6 @@ server <- function(input, output, session) {
             numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
           )
         },
-
         numericInput("optsRoundDesign", "Number of decimal places to display", value = 4)
 
 
@@ -545,7 +550,6 @@ server <- function(input, output, session) {
       ), # End of tags$details()
 
       tags$br()
-
     ) # End of tagList()
   })
 
@@ -553,25 +557,15 @@ server <- function(input, output, session) {
   result_randPrev <- reactiveVal()
 
   observeEvent(input$btnDesign, {
-    #print(paste("prevalence:", input$optsPrevalence))
-    #print(paste("cost_unit:", input$optsCostUnit))
-    #print(paste("cost_pool:", input$optsCostPool))
-    #print(paste("cost_cluster:", input$optsCostCluster))
-    #print(paste("correlation:", input$optsCorrelation))
-    #print(paste("sensitivity:", input$optsSensitivity))
-    #print(paste("specificity:", input$optsSpecificity))
-    #print(paste("max_s:", input$optsMaxS))
-    #print(paste("max_N:", input$optsMaxN))
-
     req(valid_cost())
     if (input$optsClustered) {
       # replace with switch
       req(!is.null(input$optsClustered) && input$optsClustered != "")
-      rho = as.numeric(input$optsCorrelation)
-      cc = as.numeric(input$optsCostCluster)
+      rho <- as.numeric(input$optsCorrelation)
+      cc <- as.numeric(input$optsCostCluster)
     } else {
-      rho = NA
-      cc = NA
+      rho <- NA
+      cc <- NA
     }
 
     # optimise_sN_prevalence ----
@@ -613,7 +607,6 @@ server <- function(input, output, session) {
       print(result_randPrev())
       print(result_randPrev()$catch$mean)
     }
-
   })
 
 
@@ -671,7 +664,6 @@ server <- function(input, output, session) {
     req(design_text())
     design_text()
   })
-
 } # End server()
 
 
