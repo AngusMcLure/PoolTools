@@ -588,20 +588,6 @@ server <- function(input, output, session) {
         max_N = as.numeric(input$optsMaxN),
         form = "logitnorm"
       )
-      out <-
-        out %>%
-        as.data.frame() %>%
-        mutate(
-          .keep = "none",
-          `Total cost` = round(cost, digits = as.integer(input$optsRoundDesign)),
-          `Optimal pool size` = as.integer(s),
-          `Catch` = as.integer(catch),
-          `Optimal number of pools` = as.integer(N),
-        )
-      if (!input$optsClustered) {
-        # catch and N not calculated
-        out <- out %>% select(-Catch, -`Optimal number of pools`)
-      }
       result_sN(out)
     }
 
@@ -632,34 +618,52 @@ server <- function(input, output, session) {
 
 
   design_text <- reactive({
-    req(result_randPrev())
-    r <- result_randPrev()
+    if (analysis_type() == "optimise_sN_prevalence") {
+      # fixed sample size ----
+      req(result_sN())
+      print(result_sN())
+      r <- result_sN()
+      if (input$optsClustered) {
+        tagList(
+          "The optimal clustered design for a fixed sample size is to catch a total of",
+          r$catch, "unit(s), across", r$N, "pool(s) with", r$s, "unit(s) each pool."
+        )
+      } else if (!input$optsClustered) {
+        tagList(
+          "The optimal unclustered design for a fixed sample size is to catch",
+          r$s, "unit(s) per pool."
+        )
+      }
+    } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
+      # Fixed sampling period ----
+      req(result_randPrev())
+      r <- result_randPrev()
 
-    p_strat <- ""
-    p_period <- paste("Sampling should be conducted over", r$periods, "collection period(s).")
-    p_catch <- paste(
-      "We expect an average of", r$catch$mean,
-      "units caught per cluster (variance:",
-      r$catch$variance, ")."
-    )
+      p_strat <- ""
+      p_period <- paste("Sampling should be conducted over", r$periods, "collection period(s).")
+      p_catch <- paste(
+        "We expect an average of", r$catch$mean,
+        "unit(s) caught per cluster (variance:",
+        r$catch$variance, ")."
+      )
 
-    if (analysis_type() == "optimise_random_prevalence" && input$optsTrapping == "Fixed sampling period") {
       if (input$optsPoolStrat == "pool_max_size") {
+        # max size ----
         p_strat <- paste(
-          "The optimal strategy for a fixed sampling period is to distribute units in pools of size",
+          "The optimal strategy for a fixed sampling period is to distribute units in pool(s) of size",
           r$pool_strat_pars$max_size,
           "with any remainder placed in a single smaller pool."
         )
-        print(p_strat)
       } else if (input$optsPoolStrat == "pool_target_number") {
+        # target number ----
         p_strat <- paste(
-          "The optimal strategy for a fixed sampling period is to distribute pools into",
+          "The optimal strategy for a fixed sampling period is to distribute units into",
           r$pool_strat_pars$target_number,
-          "equally sized pools, with no maximum pool size."
+          "equally sized pool(s), with no maximum pool size."
         )
       }
-    }
-    tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
+      tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
+    } # End of analysis_type() == "optimise_random_prevalence"/ fixed sampling period
   })
 
   ## Output UI ----
