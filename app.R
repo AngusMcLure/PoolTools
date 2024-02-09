@@ -574,8 +574,7 @@ server <- function(input, output, session) {
       cc = NA
     }
 
-    print(paste("rho:", rho))
-    print(paste("cc:", cc))
+    # optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- optimise_sN_prevalence(
         prevalence = as.numeric(input$optsPrevalence),
@@ -606,7 +605,7 @@ server <- function(input, output, session) {
       result_sN(out)
     }
 
-
+    # optimise_random_prevalence ----
     if (analysis_type() == "optimise_random_prevalence") {
       out <- optimise_random_prevalence(
         catch_mean = as.numeric(input$optsCatchMean),
@@ -625,32 +624,48 @@ server <- function(input, output, session) {
         verbose = FALSE
       )
       result_randPrev(out)
+      print(result_randPrev())
+      print(result_randPrev()$catch$mean)
     }
 
   })
 
-  output$designTable <- renderDataTable({
-    req(result_sN())
-    datatable(
-      result_sN(), # Ensure this returns a data frame
-      options = list(searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE),
-      rownames = FALSE
-    )
-  })
 
-  output$designText <- renderPrint({
+  design_text <- reactive({
     req(result_randPrev())
-    result_randPrev() %>% unlist()
+    r <- result_randPrev()
+
+    p_strat <- ""
+    p_period <- paste("Sampling should be conducted over", r$periods, "collection period(s).")
+    p_catch <- paste(
+      "We expect an average of", r$catch$mean,
+      "units caught per cluster (variance:",
+      r$catch$variance, ")."
+    )
+
+    if (analysis_type() == "optimise_random_prevalence" && input$optsTrapping == "Fixed sampling period") {
+      if (input$optsPoolStrat == "pool_max_size") {
+        p_strat <- paste(
+          "The optimal strategy for a fixed sampling period is to distribute units in pools of size",
+          r$pool_strat_pars$max_size,
+          "with any remainder placed in a single smaller pool."
+        )
+        print(p_strat)
+      } else if (input$optsPoolStrat == "pool_target_number") {
+        p_strat <- paste(
+          "The optimal strategy for a fixed sampling period is to distribute pools into",
+          r$pool_strat_pars$target_number,
+          "equally sized pools, with no maximum pool size."
+        )
+      }
+    }
+    tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
   })
 
   ## Output UI ----
   output$outDesign <- renderUI({
-    if (analysis_type() == "optimise_sN_prevalence") {
-      dataTableOutput("designTable")
-    } else if (analysis_type () == "optimise_random_prevalence") {
-      verbatimTextOutput("designText")
-    }
-
+    req(design_text())
+    design_text()
   })
 
 } # End server()
