@@ -1,0 +1,181 @@
+---
+title: "Untitled"
+author: "Fred Jaya"
+date: '2024-01-18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(PoolTestR)
+library(dplyr)
+devtools::load_all("~/GitHub/PoolPoweR/")
+```
+
+## Use cases
+
+Analyse (PoolTestR)
+
+Design (PoolPoweR)
+├
+```{r}
+simple <- SimpleExampleData
+```
+
+```{r}
+PrevWholeDataset <- PoolPrev(simple, Result, NumInPool, bayesian = F)
+PrevWholeDataset
+PrevWholeDataset %>% mutate(across(is.double, round, digits =4))
+```
+```{r}
+PrevByRegionYear <- PoolPrev(simple, Result, NumInPool, Region, Year, bayesian = F)
+PrevByRegionYear
+PrevByRegionYear %>% mutate(across(is.double, round, digits =4))
+```
+
+```{r}
+PrevByHier <- HierPoolPrev(simple, Result, NumInPool,
+                           hierarchy = c("Village","Site"), Year)
+PrevByHier
+PrevByHier %>% mutate(across(is.double, round, digits =4))
+```
+
+---
+
+## PoolPoweR
+
+```{r}
+x <- optimise_sN_prevalence(
+  prevalence = 0.005,
+  correlation = 0.1,
+  cost_unit = 5, 
+  cost_pool = 10,
+  cost_cluster = 20,
+  max_N = 20,
+  max_s = 50, 
+  sensitivity = 1,
+  specificity = 1, 
+  form = "logitnorm" 
+  )
+
+y <- as.data.frame(x) %>%
+  rename(`Optimal pool size` = s, `Cost` = cost, `Catch` = catch, `Optimal number of pools` = N)
+y
+```
+
+
+
+```{r}
+x <- optimise_sN_prevalence(
+  prevalence = 0.005,
+  correlation = NA,
+  cost_unit = 5, 
+  cost_pool = 10,
+  cost_cluster = NA,
+  max_N = 20,
+  max_s = 50, 
+  sensitivity = 1,
+  specificity = 1, 
+  form = "logitnorm" 
+  )
+
+y <- as.data.frame(x) %>%
+  rename(`Optimal pool size` = s, `Cost` = cost, `Catch` = catch, `Optimal number of pools` = N)
+y
+```
+
+```{r}
+y %>%
+  mutate(Cost = round(Cost, digits = 4))
+```
+
+```{r}
+optimise_random_prevalence(
+  # Survey
+  cost_cluster = NA,
+  # Cost
+  cost_unit,
+  cost_pool,
+  cost_period,
+  # Parameters
+  pool_strat_family,
+  catch_mean,
+  catch_variance,
+  prevalence,
+  correlation = NA,
+  # Advanced
+  sensitivity = 1,
+  specificity = 1,
+  max_period = 10,
+  form = "logitnorm",
+  verbose = FALSE
+)
+```
+
+```{r}
+o <- optimise_random_prevalence(
+  catch_mean = 10,
+  catch_variance = 11,
+  pool_strat_family = pool_target_number,
+  prevalence = 0.01,
+  cost_unit = 1,
+  cost_pool = 4,
+  cost_period = 10,
+  cost_cluster = 20,
+  correlation = 0.1,
+  sensitivity = 1,
+  specificity = 1,
+  max_period = 10,
+  form = "logitnorm",
+  verbose = FALSE
+)
+
+o %>% unlist()
+```
+```{r}
+p <- optimise_random_prevalence(
+  catch_mean = 10,
+  catch_variance = 11,
+  pool_strat_family = pool_max_size,
+  prevalence = 0.01,
+  cost_unit = 1,
+  cost_pool = 4,
+  cost_period = 10,
+  cost_cluster = 20,
+  correlation = 0.1,
+  sensitivity = 1,
+  specificity = 1,
+  max_period = 10,
+  form = "logitnorm",
+  verbose = FALSE
+)
+
+p
+```
+
+```{r}
+q <- optimise_random_prevalence(
+  catch_mean = 10,
+  catch_variance = 25,
+  pool_strat_family = pool_target_number,
+  prevalence = 0.01,
+  cost_unit = 1,
+  cost_pool = 2,
+  cost_period = 50,
+  cost_cluster = NA,
+  correlation = NA,
+  sensitivity = 1,
+  specificity = 1,
+  max_period = 10,
+  form = "logitnorm",
+  verbose = FALSE
+)
+
+q$pool_strat_pars$target_number
+```
+
+
+
+
+
+

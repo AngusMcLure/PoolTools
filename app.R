@@ -4,6 +4,7 @@ library(sortable)
 library(DT)
 library(dplyr)
 library(shinyFeedback)
+library(readxl)
 
 library(PoolTestR)
 library(devtools)
@@ -99,10 +100,10 @@ ui <- fluidPage(
         sidebarPanel(
           fileInput(
             "fileAnalyse",
-            accept = ".csv",
+            accept = c(".csv", ".xlsx"),
             tags$span(
               "Upload data",
-              tipify(icon("info-circle"), "Must be a .csv file", placement = "right")
+              tipify(icon("info-circle"), "Supported formats: .csv, .xlsx", placement = "right")
             )
           ),
           uiOutput("colSelectTestResults"),
@@ -215,7 +216,16 @@ server <- function(input, output, session) {
   ## ANALYSE ------------------------------------------------------------------
   data <- reactive({
     req(input$fileAnalyse)
-    read.csv(input$fileAnalyse$datapath, header = TRUE)
+
+    f <- input$fileAnalyse
+    ext <- tools::file_ext(f$name)
+    switch(
+      ext,
+      csv = read.csv(f$datapath, header = TRUE),
+      xlsx = read_xlsx(f$datapath, col_names = TRUE),
+      validate("Unsupported file; Please upload a .csv or .xlsx file")
+    )
+    #validate("Unsupported file; Please upload a .csv or .xlsx")
     # Any pre-processing or column checks
   })
 
@@ -273,7 +283,7 @@ server <- function(input, output, session) {
     req(data(), input$colTestResults, input$colUnitNumber)
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInput("optsHierarchy", "Adjust for hierarchical sampling?",
+      checkboxInputTT("optsHierarchy", "Adjust for hierarchical sampling?",
         tooltip = "tooltip", value = FALSE
       )
     )
@@ -553,11 +563,14 @@ server <- function(input, output, session) {
     ) # End of tagList()
   })
 
+  # Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
 
   observeEvent(input$btnDesign, {
     req(valid_cost())
+
+    # Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
       req(!is.null(input$optsClustered) && input$optsClustered != "")
@@ -568,16 +581,25 @@ server <- function(input, output, session) {
       cc <- NA
     }
 
+    # If "other" is selected in either sN or randPrev
+    prev <- as.numeric(ifelse(input$optsPrevalence == "other", input$optsPrevalenceOther, input$optsPrevalence))
+    sens <- as.numeric(ifelse(input$optsSensitivity == "other", input$optsSensitivityOther, input$optsSensitivity))
+    spec <- as.numeric(ifelse(input$optsSpecificity == "other", input$optsSpecificityOther, input$optsSpecificity))
+
+    print(prev)
+    print(sens)
+    print(spec)
+
     # optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- optimise_sN_prevalence(
-        prevalence = as.numeric(input$optsPrevalence),
+        prevalence = prev,
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = as.numeric(input$optsSensitivity),
-        specificity = as.numeric(input$optsSpecificity),
+        sensitivity = sens,
+        specificity = spec,
         max_s = as.numeric(input$optsMaxS),
         max_N = as.numeric(input$optsMaxN),
         form = "logitnorm"
@@ -591,14 +613,14 @@ server <- function(input, output, session) {
         catch_mean = as.numeric(input$optsCatchMean),
         catch_variance = as.numeric(input$optsCatchVar),
         pool_strat_family = get(input$optsPoolStrat),
-        prevalence = as.numeric(input$optsPrevalence),
+        prevalence = prev,
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_period = as.numeric(input$optsCostPeriod),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = as.numeric(input$optsSensitivity),
-        specificity = as.numeric(input$optsSpecificity),
+        sensitivity = sens,
+        specificity = spec,
         max_period = as.numeric(input$optsMaxPeriod),
         form = "logitnorm",
         verbose = FALSE
