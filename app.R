@@ -1,14 +1,22 @@
+# Install PoolTestR: r-universe dev version
+# options(repos = c(
+#   CRAN = "https://cloud.r-project.org",
+#   angusmclure = "https://angusmclure.r-universe.dev"
+# ))
+#install.packages("PoolTestR")
+
+# Install PoolPoweR: github dev version
+# devtools::install_github("AngusMcLure/PoolPoweR")
+
 library(shiny)
 library(shinyBS)
 library(sortable)
 library(DT)
 library(dplyr)
-library(shinyFeedback)
 library(readxl)
-
-library(PoolTestR)
 library(devtools)
-devtools::load_all("~/GitHub/PoolPoweR/")
+library(PoolTestR)
+library(PoolPoweR)
 
 # Helper functions ----
 is_filled <- function(input) {
@@ -56,8 +64,6 @@ checkboxInputTT <- function(input_id, label, tooltip, value = TRUE) {
 
 # UI ----
 ui <- fluidPage(
-  useShinyFeedback(),
-
   ## Main navbar and pages
   navbarPage("PoolTools",
     id = "main_nav",
@@ -167,7 +173,7 @@ ui <- fluidPage(
               "Calculate power of existing designs (Coming soon...)"
             )
           ),
-          selectInputTT("optsTrapping", "Sampling strategy",
+          selectInputTT("optsTrapping", "Collection strategy",
             tooltip = "tooltip",
             choices = c("Select" = "", "Fixed sample size", "Fixed sampling period")
           ),
