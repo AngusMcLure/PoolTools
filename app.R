@@ -644,15 +644,19 @@ server <- function(input, output, session) {
       req(result_sN())
       print(result_sN())
       r <- result_sN()
+      unit_text <- "units"
+      if (r$s < 2) unit_text <- "unit"
+
       if (input$optsClustered) {
         tagList(
-          "The optimal clustered design for a fixed sample size is to catch a total of",
-          r$catch, "unit(s), across", r$N, "pool(s) with", r$s, "unit(s) each pool."
+          "For the given inputs, the optimal design is to sample",
+          r$catch, "units per collection site, across", r$N, "pools with",
+          r$s, unit_text, "each pool."
         )
       } else if (!input$optsClustered) {
         tagList(
-          "The optimal unclustered design for a fixed sample size is to catch",
-          r$s, "unit(s) per pool."
+          "For the given inputs, the optimal design is to sample",
+          r$s, unit_text, "per pool."
         )
       }
     } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
@@ -671,16 +675,16 @@ server <- function(input, output, session) {
       if (input$optsPoolStrat == "pool_max_size") {
         # max size ----
         p_strat <- paste(
-          "The optimal strategy for a fixed sampling period is to distribute units in pool(s) of size",
+          "For the given inputs, the optimal design is to distribute units in pools of size",
           r$pool_strat_pars$max_size,
           "with any remainder placed in a single smaller pool."
         )
       } else if (input$optsPoolStrat == "pool_target_number") {
         # target number ----
         p_strat <- paste(
-          "The optimal strategy for a fixed sampling period is to distribute units into",
+          "For the given inputs, the optimal design is to distribute units into",
           r$pool_strat_pars$target_number,
-          "equally sized pool(s), with no maximum pool size."
+          "equally sized pools, with no maximum pool size."
         )
       }
       tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
