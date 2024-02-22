@@ -700,21 +700,21 @@ server <- function(input, output, session) {
     if (analysis_type() == "optimise_sN_prevalence") {
       # fixed sample size ----
       req(result_sN())
-      print(result_sN())
       r <- result_sN()
-      unit_text <- "units"
-      if (r$s < 2) unit_text <- "unit"
+
+      p_units <- "units"
+      if (r$s < 2) p_units <- "unit"
 
       if (input$optsClustered) {
         tagList(
           "For the given inputs, the optimal design is to sample",
           r$catch, "units per collection site, across", r$N, "pools with",
-          r$s, unit_text, "each pool."
+          r$s, p_units, "each pool."
         )
       } else if (!input$optsClustered) {
         tagList(
           "For the given inputs, the optimal design is to sample",
-          r$s, unit_text, "per pool."
+          r$s, p_units, "per pool."
         )
       }
     } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
@@ -722,12 +722,15 @@ server <- function(input, output, session) {
       req(result_randPrev())
       r <- result_randPrev()
 
+      p_units <- "units"
+      if (r$catch$mean < 2) p_units <- "unit"
       p_strat <- ""
-      p_period <- paste("Sampling should be conducted over", r$periods, "collection period(s).")
+      p_periods <- "collection periods."
+      if (r$periods < 2) p_periods <- "collection period."
+      p_period <- paste("Sampling should be conducted over", r$periods, p_periods)
       p_catch <- paste(
-        "We expect an average of", r$catch$mean,
-        "unit(s) caught per cluster (variance:",
-        r$catch$variance, ")."
+        "We expect an average of", r$catch$mean, p_units,
+        "caught per cluster (variance:", r$catch$variance, ")."
       )
 
       if (input$optsPoolStrat == "pool_max_size") {
