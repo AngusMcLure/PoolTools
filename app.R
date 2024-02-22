@@ -452,10 +452,9 @@ server <- function(input, output, session) {
     required <- input$optsCostUnit >= 0 && input$optsCostPool >= 0
     clustered <- !input$optsClustered || (input$optsClustered && input$optsCostCluster >= 0)
     periodic <- analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && input$optsCostPeriod >= 0)
-
     # Check the conditional total cost is > $0
-    cluster_cost <- ifelse(clustered, input$optsCostCluster, 0)
-    period_cost <- ifelse(periodic, input$optsCostPeriod, 0)
+    cluster_cost <- ifelse(input$optsClustered, input$optsCostCluster, 0)
+    period_cost <- ifelse(analysis_type() == "optimise_random_prevalence", input$optsCostPeriod, 0)
 
     total_cost <- input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0
   })
@@ -515,12 +514,22 @@ server <- function(input, output, session) {
 
   output$validCost <- renderText({
     req(cost_exists())
+    # Conditionally check each field is non-negative
     validate(
       need_ge0(input$optsCostUnit, "Unit $"),
       need_ge0(input$optsCostPool, "Pool $"),
-      need_ge0(input$optsCostCluster, "Cluster $"),
-      need_ge0(input$optsCostPeriod, "Period $"),
-      need(input$optsCostUnit + input$optsCostPool + input$optsCostCluster + input$optsCostPeriod > 0, "Error: At least one of the costs must be > $0"),
+    )
+    if (input$optsClustered) validate(need_ge0(input$optsCostCluster, "Cluster $"))
+    if (analysis_type() == "optimise_random_prevalence") validate(need_ge0(input$optsCostPeriod, "Period $"))
+
+    # Conditionally check total is non-zero
+    cluster_cost <- ifelse(input$optsClustered, input$optsCostCluster, 0)
+    period_cost <- ifelse(analysis_type() == "optimise_random_prevalence", input$optsCostPeriod, 0)
+    validate(
+      need(
+        input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0,
+        "At least one of the costs must be > $0"
+      )
     )
   })
 
