@@ -3,7 +3,7 @@
 #   CRAN = "https://cloud.r-project.org",
 #   angusmclure = "https://angusmclure.r-universe.dev"
 # ))
-#install.packages("PoolTestR")
+# install.packages("PoolTestR")
 
 # Install PoolPoweR: github dev version
 # devtools::install_github("AngusMcLure/PoolPoweR")
@@ -247,13 +247,12 @@ server <- function(input, output, session) {
 
     f <- input$fileAnalyse
     ext <- tools::file_ext(f$name)
-    switch(
-      ext,
+    switch(ext,
       csv = read.csv(f$datapath, header = TRUE),
       xlsx = read_xlsx(f$datapath, col_names = TRUE),
       validate("Unsupported file; Please upload a .csv or .xlsx file")
     )
-    #validate("Unsupported file; Please upload a .csv or .xlsx")
+    # validate("Unsupported file; Please upload a .csv or .xlsx")
     # Any pre-processing or column checks
   })
 
@@ -363,9 +362,6 @@ server <- function(input, output, session) {
       poolSize = input$colUnitNumber
     )
 
-    # Debugging
-    print(input$optsBayesian)
-
     if (!input$optsHierarchy) {
       # Add bayesian switch for PoolPrev
       poolprev_args <- req_args
@@ -387,7 +383,6 @@ server <- function(input, output, session) {
       if (!is.null(input$optsColStratify)) {
         hier_args <- c(hier_args, lapply(input$optsColStratify, as.name))
       }
-      print(hier_args)
       result(do.call(HierPoolPrev, hier_args))
     } else {
       result(NULL)
@@ -415,7 +410,7 @@ server <- function(input, output, session) {
 
   ## DESIGN -------------------------------------------------------------------
 
-  valid_survey <- reactive({
+  survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
       is_filled(input$optsTrapping)
@@ -428,14 +423,14 @@ server <- function(input, output, session) {
     required && clustered && periodic
   })
 
-  valid_randPrev <- reactive({
+  randPrev_exists <- reactive({
     is_filled(input$optsPoolStrat) &&
       is_filled(input$optsCatchMean) &&
       is_filled(input$optsCatchVar)
   })
 
   analysis_type <- reactive({
-    req(valid_survey())
+    req(survey_exists())
     if (input$optsObjective == "Estimate prevalence" &
       input$optsMode == "Identify cost-effective designs") {
       if (input$optsTrapping == "Fixed sample size") {
@@ -497,11 +492,9 @@ server <- function(input, output, session) {
 
   ## Cost UI ----
   output$uiCost <- renderUI({
-    req(valid_survey(), analysis_type())
+    req(survey_exists(), analysis_type())
     # Because rand prev has some additional options first
-    print(analysis_type())
-    print(valid_randPrev())
-    if (analysis_type() == "optimise_random_prevalence") req(valid_randPrev())
+    if (analysis_type() == "optimise_random_prevalence") req(randPrev_valid())
     # Shared across all analysis types
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
@@ -534,7 +527,7 @@ server <- function(input, output, session) {
 
   ## Params UI ----
   output$uiParams <- renderUI({
-    req(valid_cost())
+    req(cost_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$b("Design metrics"),
@@ -661,10 +654,7 @@ server <- function(input, output, session) {
     prev <- as.numeric(ifelse(input$optsPrevalence == "other", input$optsPrevalenceOther, input$optsPrevalence))
     sens <- as.numeric(ifelse(input$optsSensitivity == "other", input$optsSensitivityOther, input$optsSensitivity))
     spec <- as.numeric(ifelse(input$optsSpecificity == "other", input$optsSpecificityOther, input$optsSpecificity))
-
-    print(prev)
-    print(sens)
-    print(spec)
+    # End parse input arguments ----
 
     # optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
@@ -702,8 +692,6 @@ server <- function(input, output, session) {
         verbose = FALSE
       )
       result_randPrev(out)
-      print(result_randPrev())
-      print(result_randPrev()$catch$mean)
     }
   })
 
