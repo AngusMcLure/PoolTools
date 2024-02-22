@@ -25,19 +25,20 @@ simple <- SimpleExampleData
 ```{r}
 PrevWholeDataset <- PoolPrev(simple, Result, NumInPool, bayesian = F)
 PrevWholeDataset
-PrevWholeDataset %>% mutate(across(is.double, round, digits =4))
+PrevWholeDataset %>% mutate(across(is.double, round, digits = 4))
 ```
 ```{r}
 PrevByRegionYear <- PoolPrev(simple, Result, NumInPool, Region, Year, bayesian = F)
 PrevByRegionYear
-PrevByRegionYear %>% mutate(across(is.double, round, digits =4))
+PrevByRegionYear %>% mutate(across(is.double, round, digits = 4))
 ```
 
 ```{r}
 PrevByHier <- HierPoolPrev(simple, Result, NumInPool,
-                           hierarchy = c("Village","Site"), Year)
+  hierarchy = c("Village", "Site"), Year
+)
 PrevByHier
-PrevByHier %>% mutate(across(is.double, round, digits =4))
+PrevByHier %>% mutate(across(is.double, round, digits = 4))
 ```
 
 ---
@@ -48,15 +49,15 @@ PrevByHier %>% mutate(across(is.double, round, digits =4))
 x <- optimise_sN_prevalence(
   prevalence = 0.005,
   correlation = 0.1,
-  cost_unit = 5, 
+  cost_unit = 5,
   cost_pool = 10,
   cost_cluster = 20,
   max_N = 20,
-  max_s = 50, 
+  max_s = 50,
   sensitivity = 1,
-  specificity = 1, 
-  form = "logitnorm" 
-  )
+  specificity = 1,
+  form = "logitnorm"
+)
 
 y <- as.data.frame(x) %>%
   rename(`Optimal pool size` = s, `Cost` = cost, `Catch` = catch, `Optimal number of pools` = N)
@@ -69,15 +70,15 @@ y
 x <- optimise_sN_prevalence(
   prevalence = 0.005,
   correlation = NA,
-  cost_unit = 5, 
+  cost_unit = 5,
   cost_pool = 10,
   cost_cluster = NA,
   max_N = 20,
-  max_s = 50, 
+  max_s = 50,
   sensitivity = 1,
-  specificity = 1, 
-  form = "logitnorm" 
-  )
+  specificity = 1,
+  form = "logitnorm"
+)
 
 y <- as.data.frame(x) %>%
   rename(`Optimal pool size` = s, `Cost` = cost, `Catch` = catch, `Optimal number of pools` = N)
