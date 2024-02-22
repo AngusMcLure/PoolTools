@@ -24,6 +24,28 @@ is_filled <- function(input) {
   !is.null(input) && input != ""
 }
 
+need_gt0 <- function(expr, var) {
+  # amended shiny::need()
+  message <- paste("Error:", var, "must be > 0")
+  force(message)
+  if (!isTruthy(expr > 0)) {
+    return(message)
+  } else {
+    return(invisible(NULL))
+  }
+}
+
+need_ge0 <- function(expr, var) {
+  # amended shiny::need()
+  message <- paste("Error:", var, "must be >= 0")
+  force(message)
+  if (!isTruthy(expr >= 0)) {
+    return(message)
+  } else {
+    return(invisible(NULL))
+  }
+}
+
 ## Input UIs with tooltips ----
 selectInputTT <- function(input_id, label, tooltip, choices, selected = NULL) {
   selectInput(
@@ -188,7 +210,7 @@ ui <- fluidPage(
           uiOutput("uiCost"),
           uiOutput("uiParams"),
           uiOutput("uiAdvanced"),
-          actionButton("btnDesign", "Run!")
+          uiOutput("btnDesign")
         ), # End of sidebarPanel ------------------------------
 
         mainPanel(
@@ -399,10 +421,11 @@ server <- function(input, output, session) {
       is_filled(input$optsTrapping)
   })
 
-  valid_cost <- reactive({
-    is_filled(input$optsCostUnit) &&
-      is_filled(input$optsCostPool)
-    # Add cluster and cost period here?
+  cost_exists <- reactive({
+    required <- is_filled(input$optsCostUnit) && is_filled(input$optsCostPool)
+    clustered <- (!input$optsClustered || input$optsClustered && is_filled(input$optsCostCluster))
+    periodic <- (analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && is_filled(input$optsCostPeriod)))
+    required && clustered && periodic
   })
 
   valid_randPrev <- reactive({
@@ -423,6 +446,24 @@ server <- function(input, output, session) {
     }
   })
 
+  randPrev_valid <- reactive({
+    req(randPrev_exists())
+    input$optsCatchMean > 0 && input$optsCatchVar && input$optsCatchVar > input$optsCatchMean
+  })
+
+  cost_valid <- reactive({
+    req(cost_exists())
+    # Conditionally check that individual costs are non-negative
+    required <- input$optsCostUnit >= 0 && input$optsCostPool >= 0
+    clustered <- !input$optsClustered || (input$optsClustered && input$optsCostCluster >= 0)
+    periodic <- analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && input$optsCostPeriod >= 0)
+
+    # Check the conditional total cost is > $0
+    cluster_cost <- ifelse(clustered, input$optsCostCluster, 0)
+    period_cost <- ifelse(periodic, input$optsCostPeriod, 0)
+
+    total_cost <- input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0
+  })
 
   ## RandPrev UI ----
   output$uiRandPrev <- renderUI({
@@ -438,10 +479,21 @@ server <- function(input, output, session) {
         )
       ),
       numericInput("optsCatchMean", "Catch mean", value = NULL, min = 1, step = 1),
-      numericInput("optsCatchVar", "Catch variance", value = NULL, min = 2, step = 1)
+      numericInput("optsCatchVar", "Catch variance", value = NULL, min = 2, step = 1),
+      textOutput("validCatch")
     )
   })
 
+
+  output$validCatch <- renderText({
+    req(randPrev_exists())
+    # Validate RandPrevUI
+    validate(
+      need_gt0(input$optsCatchMean, "Catch mean"),
+      need_gt0(input$optsCatchVar, "Catch variance"),
+      need(input$optsCatchVar > input$optsCatchMean, "Error: Catch variance must be greater than the mean"),
+    )
+  })
 
   ## Cost UI ----
   output$uiCost <- renderUI({
@@ -463,7 +515,19 @@ server <- function(input, output, session) {
       },
       if (analysis_type() == "optimise_random_prevalence") {
         numericInput("optsCostPeriod", "Collection period $", value = NULL, min = 1e-6, step = 0.5)
-      }
+      },
+      textOutput("validCost")
+    )
+  })
+
+  output$validCost <- renderText({
+    req(cost_exists())
+    validate(
+      need_ge0(input$optsCostUnit, "Unit $"),
+      need_ge0(input$optsCostPool, "Pool $"),
+      need_ge0(input$optsCostCluster, "Cluster $"),
+      need_ge0(input$optsCostPeriod, "Period $"),
+      need(input$optsCostUnit + input$optsCostPool + input$optsCostCluster + input$optsCostPeriod > 0, "Error: At least one of the costs must be > $0"),
     )
   })
 
@@ -513,6 +577,7 @@ server <- function(input, output, session) {
 
   ## Advanced settings ----
   output$uiAdvanced <- renderUI({
+    req(cost_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$details(
@@ -567,14 +632,19 @@ server <- function(input, output, session) {
 
       tags$br()
     ) # End of tagList()
+  }) # End Adv settings
+
+  output$btnDesign <- renderUI({
+    req(cost_valid())
+    actionButton("runDesign", "Run!")
   })
 
   # Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
 
-  observeEvent(input$btnDesign, {
-    req(valid_cost())
+  observeEvent(input$runDesign, {
+    req(cost_valid())
 
     # Parse input arguments ----
     if (input$optsClustered) {
