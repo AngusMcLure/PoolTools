@@ -21,24 +21,33 @@ server <- function(input, output, session) {
       xlsx = read_xlsx(f$datapath, col_names = TRUE),
       validate("Unsupported file; Please upload a .csv or .xlsx file")
     )
-    # Any pre-processing or column checks
   })
 
   metadata_cols <- reactive({
     # All column names that are not the results or unit number per pool
-    req(data())
+    req(colselect_valid())
     cols <- names(data())
     cols <- cols[!cols %in% c(input$colTestResults, input$colUnitNumber)]
   })
 
   ## State reactives
-  colselect_valid <- reactive({
+  colselect_exists <- reactive({
     req(data())
-    input$colTestResults != "" && input$colUnitNumber != ""
+    is_filled(input$colTestResults) && is_filled(input$colUnitNumber)
+  })
+
+  colselect_valid <- reactive({
+    req(colselect_exists())
+    # Results column must be either 0 or 1
+    results_ok <- is_binary_col(data(), input$colTestResults)
+    # NumInPool column must be integers
+    numinpool_ok <- is_integer_col(data(), input$colUnitNumber)
+
+    results_ok && numinpool_ok
   })
 
   stratify_valid <- reactive({
-    req(colselect_valid(), !is.null(input$optsStratify))
+    req(colselect_exists(), !is.null(input$optsStratify))
     (!input$optsStratify || !is.null(input$optsColStratify))
   })
 
@@ -55,7 +64,6 @@ server <- function(input, output, session) {
       choices = c("Select column" = "", names(data()))
     )
   })
-
   output$colSelectUnitNumber <- renderUI({
     req(data())
     cols <- names(data())
@@ -65,6 +73,15 @@ server <- function(input, output, session) {
       choices = c("Select column" = "", cols)
     )
   })
+  output$validColSelect <- renderText({
+    req(colselect_exists())
+    validate(
+      need(is_binary_col(data(), input$colTestResults), "Error: 'Results' column must contain only 0 or 1"),
+      need(is_integer_col(data(), input$colUnitNumber), "Error: 'Number in pool' column must contain integers only")
+    )
+  })
+
+
   output$checkStratify <- renderUI({
     req(colselect_valid())
     tagList(
@@ -460,7 +477,7 @@ server <- function(input, output, session) {
     # Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
-      req(!is.null(input$optsClustered) && input$optsClustered != "")
+      req(is_filled(input$optsClustered))
       rho <- as.numeric(input$optsCorrelation)
       cc <- as.numeric(input$optsCostCluster)
     } else {

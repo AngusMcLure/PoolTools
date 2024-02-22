@@ -25,3 +25,12 @@ need_ge0 <- function(expr, var) {
     return(invisible(NULL))
   }
 }
+
+## fileAnalyse column checks
+is_binary_col <- function(df, col) {
+  all(unique(df[[col]]) == c(0, 1))
+}
+
+is_integer_col <- function(df, col) {
+  is.numeric(df[[col]]) && all(floor(df[[col]]) == df[[col]])
+}

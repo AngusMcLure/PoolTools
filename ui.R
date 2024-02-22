@@ -49,6 +49,7 @@ ui <- fluidPage(
           ),
           uiOutput("colSelectTestResults"),
           uiOutput("colSelectUnitNumber"),
+          uiOutput("validColSelect"),
           uiOutput("checkStratify"),
           uiOutput("colSelectStratify"),
           uiOutput("checkHierarchy"),
