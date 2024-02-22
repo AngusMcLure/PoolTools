@@ -252,7 +252,6 @@ server <- function(input, output, session) {
       xlsx = read_xlsx(f$datapath, col_names = TRUE),
       validate("Unsupported file; Please upload a .csv or .xlsx file")
     )
-    # validate("Unsupported file; Please upload a .csv or .xlsx")
     # Any pre-processing or column checks
   })
 
@@ -263,6 +262,21 @@ server <- function(input, output, session) {
     cols <- cols[!cols %in% c(input$colTestResults, input$colUnitNumber)]
   })
 
+  ## State reactives
+  colselect_valid <- reactive({
+    req(data())
+    input$colTestResults != "" && input$colUnitNumber != ""
+  })
+
+  stratify_valid <- reactive({
+    req(colselect_valid(), !is.null(input$optsStratify))
+    (!input$optsStratify || !is.null(input$optsColStratify))
+  })
+
+  hierarchy_valid <- reactive({
+    req(stratify_valid(), !is.null(input$optsHierarchy))
+    (!input$optsHierarchy || (length(input$optsHierarchyOrder) >= 2))
+  })
 
   ## Options
   output$colSelectTestResults <- renderUI({
@@ -272,6 +286,7 @@ server <- function(input, output, session) {
       choices = c("Select column" = "", names(data()))
     )
   })
+
   output$colSelectUnitNumber <- renderUI({
     req(data())
     cols <- names(data())
@@ -282,7 +297,7 @@ server <- function(input, output, session) {
     )
   })
   output$checkStratify <- renderUI({
-    req(data(), input$colTestResults, input$colUnitNumber)
+    req(colselect_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsStratify", "Stratify data?",
@@ -293,21 +308,35 @@ server <- function(input, output, session) {
   })
 
   output$colSelectStratify <- renderUI({
-    req(data(), input$colTestResults, input$colUnitNumber)
+    req(colselect_valid())
     if (!is.null(input$optsStratify) && input$optsStratify) {
-      checkboxGroupInput(
-        "optsColStratify",
-        tags$span("Stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
-        choices = metadata_cols()
+      tagList(
+        checkboxGroupInput(
+          "optsColStratify",
+          tags$span("Stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
+          choices = metadata_cols()
+        ),
+        textOutput("validStratify")
       )
     } else {
       return(NULL)
     }
   })
 
+  output$validStratify <- renderText({
+    # No need to validate if not stratifying
+    req(input$optsStratify)
+    validate(
+      need(
+        !is.null(input$optsColStratify),
+        "Error: Select at least one column, or deselect 'Stratify data?' to estimate prevalence on the whole dataset"
+      )
+    )
+  })
+
   output$checkHierarchy <- renderUI({
     # Although the options don't change, reveal only when file is uploaded
-    req(data(), input$colTestResults, input$colUnitNumber)
+    req(stratify_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsHierarchy", "Adjust for hierarchical sampling?",
@@ -316,25 +345,36 @@ server <- function(input, output, session) {
     )
   })
   output$colHierarchyOrder <- renderUI({
-    req(data(), input$colTestResults, input$colUnitNumber)
-    if (!is.null(input$optsStratify) && input$optsHierarchy) {
-      bucket_list(
-        header = "Drag to include hierarchical variables and reorder from largest to smallest",
-        orientation = "horizontal", # doesn't work in sidebar?
-        add_rank_list(
-          text = "Other variables",
-          input_id = "_optsHierarchyExclude",
-          labels = metadata_cols()
+    req(stratify_valid())
+    if (!is.null(input$optsHierarchy) && input$optsHierarchy) {
+      tagList(
+        bucket_list(
+          header = "Drag to include hierarchical variables and reorder from largest to smallest",
+          orientation = "horizontal", # doesn't work in sidebar?
+          add_rank_list(
+            text = "Hierarchical variables",
+            input_id = "optsHierarchyOrder"
+          ),
+          add_rank_list(
+            text = "Other variables",
+            input_id = "_optsHierarchyExclude",
+            labels = metadata_cols()
+          )
         ),
-        add_rank_list(
-          text = "Hierarchical variables",
-          input_id = "optsHierarchyOrder"
-        )
+        textOutput("validHierarchy")
       )
     }
   })
+
+  output$validHierarchy <- renderText({
+    req(input$optsHierarchy)
+    validate(
+      need(length(input$optsHierarchyOrder) >= 2, "You must select and order at least 2 strata")
+    )
+  })
+
   output$optsSettings <- renderUI({
-    req(data())
+    req(hierarchy_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$details(
@@ -346,8 +386,10 @@ server <- function(input, output, session) {
       tags$br()
     )
   })
+
+
   output$btnAnalyse <- renderUI({
-    req(data())
+    req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
     actionButton("optsAnalyse", "Run!")
   })
 
@@ -355,7 +397,7 @@ server <- function(input, output, session) {
   result <- reactiveVal()
 
   observeEvent(input$optsAnalyse, {
-    req(data(), input$colTestResults, input$colUnitNumber)
+    req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
     req_args <- list(
       data = data(),
       result = input$colTestResults,
@@ -390,12 +432,12 @@ server <- function(input, output, session) {
   })
 
   output$outAnalyse <- renderDataTable({
-    req(result())
+    req(hierarchy_valid(), result())
     result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
   })
 
   output$btnDlAnalyse <- renderUI({
-    req(result())
+    req(hierarchy_valid(), result())
     downloadButton("dlAnalyse", "Download results")
   })
 
@@ -626,8 +668,6 @@ server <- function(input, output, session) {
             numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
           )
         },
-        numericInput("optsRoundDesign", "Number of decimal places to display", value = 4)
-
 
         # optimise_random_prevalence ----
       ), # End of tags$details()
