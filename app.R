@@ -17,6 +17,7 @@ library(readxl)
 library(devtools)
 library(PoolTestR)
 library(PoolPoweR)
+library(shinybusy)
 
 source("R/validation.R")
 source("R/tooltips_ui.R")

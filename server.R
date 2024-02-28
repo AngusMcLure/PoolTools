@@ -115,7 +115,7 @@ server <- function(input, output, session) {
     validate(
       need(
         !is.null(input$optsColStratify),
-        "Error: Select at least one column, or deselect 'Stratify data?' to estimate prevalence on the whole dataset"
+        "Error: Select at least one strata, or deselect 'Stratify data?' to estimate prevalence on the whole dataset"
       )
     )
   })
@@ -184,6 +184,8 @@ server <- function(input, output, session) {
 
   observeEvent(input$optsAnalyse, {
     req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
+    show_modal_spinner(text = "Analysing...")
+    Sys.sleep(1)
     req_args <- list(
       data = data(),
       result = input$colTestResults,
@@ -215,11 +217,18 @@ server <- function(input, output, session) {
     } else {
       result(NULL)
     }
+    result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+    remove_modal_spinner()
   })
 
-  output$outAnalyse <- renderDataTable({
-    req(hierarchy_valid(), result())
-    result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+  output$outDT <- renderDataTable({
+    req(result())
+    result()
+  })
+
+  output$outAnalyse <- renderUI({
+    # Update this, so output only changes when clicking button
+    dataTableOutput("outDT")
   })
 
   output$btnDlAnalyse <- renderUI({
@@ -473,7 +482,8 @@ server <- function(input, output, session) {
 
   observeEvent(input$runDesign, {
     req(cost_valid())
-
+    show_modal_spinner(text = "Designing...")
+    Sys.sleep(1)
     # Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
@@ -528,10 +538,12 @@ server <- function(input, output, session) {
       )
       result_randPrev(out)
     }
+    remove_modal_spinner()
   })
 
 
   design_text <- reactive({
+    ## MOVE THIS IN OBSERVE EVENT
     if (analysis_type() == "optimise_sN_prevalence") {
       # fixed sample size ----
       req(result_sN())

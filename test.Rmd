@@ -175,6 +175,14 @@ q <- optimise_random_prevalence(
 q$pool_strat_pars$target_number
 ```
 
+```{r}
+is_integer_col(simple, "NumInPool")
+
+is.numeric(simple[["NumInPool"]])
+
+```
+
+
 
 
 
