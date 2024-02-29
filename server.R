@@ -219,7 +219,7 @@ server <- function(input, output, session) {
     }
     result(
       result() %>%
-      mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+        mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
     )
     remove_modal_spinner()
   })
@@ -482,6 +482,7 @@ server <- function(input, output, session) {
   # Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
+  design_result <- reactiveVal()
 
   observeEvent(input$runDesign, {
     req(cost_valid())
@@ -541,12 +542,9 @@ server <- function(input, output, session) {
       )
       result_randPrev(out)
     }
-    remove_modal_spinner()
-  })
 
 
-  design_text <- reactive({
-    ## MOVE THIS IN OBSERVE EVENT
+    ## Prepare text output ----
     if (analysis_type() == "optimise_sN_prevalence") {
       # fixed sample size ----
       req(result_sN())
@@ -556,16 +554,16 @@ server <- function(input, output, session) {
       if (r$s < 2) p_units <- "unit"
 
       if (input$optsClustered) {
-        tagList(
+        design_result(tagList(
           "For the given inputs, the optimal design is to sample",
           r$catch, "units per collection site, across", r$N, "pools with",
           r$s, p_units, "each pool."
-        )
+        ))
       } else if (!input$optsClustered) {
-        tagList(
+        design_result(tagList(
           "For the given inputs, the optimal design is to sample",
           r$s, p_units, "per pool."
-        )
+        ))
       }
     } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
       # Fixed sampling period ----
@@ -598,13 +596,18 @@ server <- function(input, output, session) {
           "equally sized pools, with no maximum pool size."
         )
       }
-      tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
+      design_result(
+        tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
+      )
     } # End of analysis_type() == "optimise_random_prevalence"/ fixed sampling period
+
+    remove_modal_spinner()
   })
+
 
   ## Output UI ----
   output$outDesign <- renderUI({
-    req(design_text())
-    design_text()
+    req(design_result())
+    design_result()
   })
 } # End server()

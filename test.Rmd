@@ -179,7 +179,6 @@ q$pool_strat_pars$target_number
 is_integer_col(simple, "NumInPool")
 
 is.numeric(simple[["NumInPool"]])
-
 ```
 
 
