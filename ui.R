@@ -39,6 +39,7 @@ ui <- fluidPage(
       br(),
       sidebarLayout(
         sidebarPanel(
+          style = "max-height: 75vh; overflow-y: auto;",
           fileInput(
             "fileAnalyse",
             accept = c(".csv", ".xlsx"),
@@ -95,6 +96,7 @@ ui <- fluidPage(
       br(),
       sidebarLayout(
         sidebarPanel(
+          style = "max-height: 75vh; overflow-y: auto;",
 
           # Survey options ------------------------------------
           selectInputTT("optsObjective", "Survey objective",

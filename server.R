@@ -217,7 +217,10 @@ server <- function(input, output, session) {
     } else {
       result(NULL)
     }
-    result() %>% mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+    result(
+      result() %>%
+      mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+    )
     remove_modal_spinner()
   })
 
