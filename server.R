@@ -196,7 +196,7 @@ server <- function(input, output, session) {
       # Add bayesian switch for PoolPrev
       poolprev_args <- req_args
       poolprev_args$bayesian <- input$optsBayesian
-      if (is.null(input$optsColStratify)) {
+      if (!input$optsStratify) {
         # Estimate prevalence on whole data
         result(do.call(PoolPrev, poolprev_args))
       } else {
@@ -210,7 +210,7 @@ server <- function(input, output, session) {
       hier_args <- req_args
       hier_args$hierarchy <- input$optsHierarchyOrder
       # Parse arguments for stratification
-      if (!is.null(input$optsColStratify)) {
+      if (input$optsStratify) {
         hier_args <- c(hier_args, lapply(input$optsColStratify, as.name))
       }
       result(do.call(HierPoolPrev, hier_args))
