@@ -385,7 +385,7 @@ server <- function(input, output, session) {
       selectInputTT("optsPrevalence", "Prevalence",
         tooltip = "tooltip",
         choices = c(
-          "Low (0.01%)" = 0.001,
+          "Low (0.1%)" = 0.001,
           "Med. (0.5%)" = 0.005,
           "High (2%)" = 0.02,
           "Other" = "other"
@@ -550,28 +550,28 @@ server <- function(input, output, session) {
       req(result_sN())
       r <- result_sN()
 
-      p_units <- "units"
-      if (r$s < 2) p_units <- "unit"
+      pre_txt <- "For the given inputs, the optimal design is to sample"
+      p_units <- pluralise(r$s, "unit")
 
       if (input$optsClustered) {
         design_result(tagList(
-          "For the given inputs, the optimal design is to sample",
-          r$catch, "units per collection site, across", r$N, "pools with",
-          r$s, p_units, "each pool."
+          pre_txt, r$catch, "units per collection site, across", r$N,
+          "pools with", r$s, p_units, "each pool."
         ))
       } else if (!input$optsClustered) {
         design_result(tagList(
-          "For the given inputs, the optimal design is to sample",
-          r$s, p_units, "per pool."
+          pre_txt, r$s, p_units, "per pool."
         ))
       }
+
+
     } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
       # Fixed sampling period ----
       req(result_randPrev())
       r <- result_randPrev()
 
-      p_units <- "units"
-      if (r$catch$mean < 2) p_units <- "unit"
+      p_units <- pluralise(r$catch$mean, "unit")
+
       p_strat <- ""
       p_periods <- "collection periods."
       if (r$periods < 2) p_periods <- "collection period."
