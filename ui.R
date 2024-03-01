@@ -45,7 +45,7 @@ ui <- fluidPage(
             accept = c(".csv", ".xlsx"),
             tags$span(
               "Upload data",
-              tipify(icon("info-circle"), "Supported formats: .csv, .xlsx", placement = "right")
+              shinyBS::tipify(icon("info-circle"), "Supported formats: .csv, .xlsx", placement = "right")
             )
           ),
           uiOutput("colSelectTestResults"),

@@ -18,7 +18,7 @@ server <- function(input, output, session) {
     ext <- tools::file_ext(f$name)
     switch(ext,
       csv = read.csv(f$datapath, header = TRUE),
-      xlsx = read_xlsx(f$datapath, col_names = TRUE),
+      xlsx = readxl::read_xlsx(f$datapath, col_names = TRUE),
       validate("Unsupported file; Please upload a .csv or .xlsx file")
     )
   })
@@ -184,7 +184,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$optsAnalyse, {
     req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
-    show_modal_spinner(text = "Analysing...")
+    shinybusy::show_modal_spinner(text = "Analysing...")
     Sys.sleep(1)
     req_args <- list(
       data = data(),
@@ -198,12 +198,12 @@ server <- function(input, output, session) {
       poolprev_args$bayesian <- input$optsBayesian
       if (!input$optsStratify) {
         # Estimate prevalence on whole data
-        result(do.call(PoolPrev, poolprev_args))
+        result(do.call(PoolTestR::PoolPrev, poolprev_args))
       } else {
         # Estimate prevalence for each selected column (stratified)
         # Parse arguments
         col_args <- c(poolprev_args, lapply(input$optsColStratify, as.name))
-        result(do.call(PoolPrev, col_args))
+        result(do.call(PoolTestR::PoolPrev, col_args))
       }
     } else if (input$optsHierarchy) {
       # Account for hierarchical sampling structure
@@ -213,15 +213,15 @@ server <- function(input, output, session) {
       if (input$optsStratify) {
         hier_args <- c(hier_args, lapply(input$optsColStratify, as.name))
       }
-      result(do.call(HierPoolPrev, hier_args))
+      result(do.call(PoolTestR::HierPoolPrev, hier_args))
     } else {
       result(NULL)
     }
     result(
       result() %>%
-        mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+        dplyr::mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
     )
-    remove_modal_spinner()
+    shinybusy::remove_modal_spinner()
   })
 
   output$outDT <- renderDataTable({
@@ -486,7 +486,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$runDesign, {
     req(cost_valid())
-    show_modal_spinner(text = "Designing...")
+    shinybusy::show_modal_spinner(text = "Designing...")
     Sys.sleep(1)
     # Parse input arguments ----
     if (input$optsClustered) {
@@ -507,7 +507,7 @@ server <- function(input, output, session) {
 
     # optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
-      out <- optimise_sN_prevalence(
+      out <- PoolPoweR::optimise_sN_prevalence(
         prevalence = prev,
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
@@ -524,7 +524,7 @@ server <- function(input, output, session) {
 
     # optimise_random_prevalence ----
     if (analysis_type() == "optimise_random_prevalence") {
-      out <- optimise_random_prevalence(
+      out <- PoolPoweR::optimise_random_prevalence(
         catch_mean = as.numeric(input$optsCatchMean),
         catch_variance = as.numeric(input$optsCatchVar),
         pool_strat_family = get(input$optsPoolStrat),
@@ -601,7 +601,7 @@ server <- function(input, output, session) {
       )
     } # End of analysis_type() == "optimise_random_prevalence"/ fixed sampling period
 
-    remove_modal_spinner()
+    shinybusy::remove_modal_spinner()
   })
 
 

@@ -4,7 +4,7 @@ selectInputTT <- function(input_id, label, tooltip, choices, selected = NULL) {
     input_id,
     tags$span(
       label,
-      tipify(icon("info-circle"), tooltip, placement = "right")
+      shinyBS::tipify(icon("info-circle"), tooltip, placement = "right")
     ),
     choices = choices,
     selected = selected
@@ -16,7 +16,7 @@ textInputTT <- function(input_id, label, choices, tooltip, value = NULL, placeho
     input_id,
     tags$span(
       label,
-      tipify(icon("info-circle"), tooltip, placement = "right")
+      shinyBS::tipify(icon("info-circle"), tooltip, placement = "right")
     ),
     value = value,
     placeholder = placeholder
@@ -28,7 +28,7 @@ checkboxInputTT <- function(input_id, label, tooltip, value = TRUE) {
     input_id,
     tags$span(
       tags$b(label),
-      tipify(icon("info-circle"), tooltip, placement = "right")
+      shinyBS::tipify(icon("info-circle"), tooltip, placement = "right")
     ),
     value = value
   )
