@@ -8,7 +8,20 @@ has_periods <- function(randprev_output, clustered) {
   return(TRUE)
 }
 
+sn_text <- function(snprev_output, clustered) {
+  r <- snprev_output
+  pre_txt <- "For the given inputs, the optimal design is to sample "
+  p_units <- pluralise(r$s, "unit")
 
+  if (clustered) {
+    paste0(
+      pre_txt, r$catch, " units per collection site, across ",
+      r$N, " pools with ", r$s, " ", p_units, " each pool."
+   )
+  } else if (!clustered) {
+    paste0(pre_txt, r$s, " ", p_units, " per pool.")
+  }
+}
 
 strat_text <- function(randprev_output, pool_strat) {
   r <- randprev_output

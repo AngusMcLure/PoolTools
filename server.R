@@ -548,21 +548,9 @@ server <- function(input, output, session) {
     if (analysis_type() == "optimise_sN_prevalence") {
       # fixed sample size ----
       req(result_sN())
-      r <- result_sN()
-
-      pre_txt <- "For the given inputs, the optimal design is to sample"
-      p_units <- pluralise(r$s, "unit")
-
-      if (input$optsClustered) {
-        design_result(tagList(
-          pre_txt, r$catch, "units per collection site, across", r$N,
-          "pools with", r$s, p_units, "each pool."
-        ))
-      } else if (!input$optsClustered) {
-        design_result(tagList(
-          pre_txt, r$s, p_units, "per pool."
-        ))
-      }
+      design_result(
+        sn_text(result_sN(), input$optsClustered)
+      )
 
 
     } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
