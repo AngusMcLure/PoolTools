@@ -1,6 +1,9 @@
 pluralise <- function(obj, text) {
-  if (obj > 1) return(paste0(text, "s"))
-  else text
+  if (obj > 1) {
+    return(paste0(text, "s"))
+  } else {
+    text
+  }
 }
 
 sn_text <- function(snprev_output, clustered) {
@@ -12,7 +15,7 @@ sn_text <- function(snprev_output, clustered) {
     paste0(
       pre_txt, r$catch, " units per collection site, across ",
       r$N, " pools with ", r$s, " ", p_units, " each pool."
-   )
+    )
   } else if (!clustered) {
     paste0(pre_txt, r$s, " ", p_units, " per pool.")
   }
@@ -43,8 +46,11 @@ period_text <- function(randprev_output) {
 catch_text <- function(randprev_output, clustered) {
   r <- randprev_output
   p_units <- pluralise(r$catch$mean, "unit")
-  if (clustered) c <- "per cluster "
-  else c <- ""
+  if (clustered) {
+    c <- "per cluster "
+  } else {
+    c <- ""
+  }
   paste0(
     "We expect an average of ", r$catch$mean, " ", p_units, " (variance: ",
     r$catch$variance, ") ", "caught ", c, " per collection period."
@@ -52,8 +58,9 @@ catch_text <- function(randprev_output, clustered) {
 }
 
 paste_randprev <- function() {
-  if (!clustered && is.na(r$periods))
-  design_result(
-    tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
-  )
+  if (!clustered && is.na(r$periods)) {
+    design_result(
+      tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
+    )
+  }
 }

@@ -492,29 +492,24 @@ server <- function(input, output, session) {
     if (input$optsClustered) {
       # replace with switch
       req(is_filled(input$optsClustered))
-      rho <- as.numeric(input$optsCorrelation)
+      rho <- processOther(input, "optsCorrelation")
       cc <- as.numeric(input$optsCostCluster)
     } else {
       rho <- NA
       cc <- NA
     }
-
-    # If "other" is selected in either sN or randPrev
-    prev <- as.numeric(ifelse(input$optsPrevalence == "other", input$optsPrevalenceOther, input$optsPrevalence))
-    sens <- as.numeric(ifelse(input$optsSensitivity == "other", input$optsSensitivityOther, input$optsSensitivity))
-    spec <- as.numeric(ifelse(input$optsSpecificity == "other", input$optsSpecificityOther, input$optsSpecificity))
     # End parse input arguments ----
 
     # optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- PoolPoweR::optimise_sN_prevalence(
-        prevalence = prev,
+        prevalence = processOther(input, "optsPrevalence"),
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = sens,
-        specificity = spec,
+        sensitivity = processOther(input, "optsSensitivity"),
+        specificity = processOther(input, "optsSpecificity"),
         max_s = as.numeric(input$optsMaxS),
         max_N = as.numeric(input$optsMaxN),
         form = "logitnorm"
@@ -528,14 +523,14 @@ server <- function(input, output, session) {
         catch_mean = as.numeric(input$optsCatchMean),
         catch_variance = as.numeric(input$optsCatchVar),
         pool_strat_family = get(input$optsPoolStrat),
-        prevalence = prev,
+        prevalence = processOther(input, "optsPrevalence"),
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_period = as.numeric(input$optsCostPeriod),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = sens,
-        specificity = spec,
+        sensitivity = processOther(input, "optsSensitivity"),
+        specificity = processOther(input, "optsSpecificity"),
         max_period = as.numeric(input$optsMaxPeriod),
         form = "logitnorm",
         verbose = FALSE
@@ -551,8 +546,6 @@ server <- function(input, output, session) {
       design_result(
         sn_text(result_sN(), input$optsClustered)
       )
-
-
     } else if (analysis_type() == "optimise_random_prevalence") {
       # Fixed sampling period ----
       req(result_randPrev())
@@ -566,13 +559,11 @@ server <- function(input, output, session) {
         design_result(
           tagList(strat_txt, tags$br(), tags$br(), period_txt, tags$br(), tags$br(), catch_txt)
         )
-      }
-      else if (!input$optsClustered) {
+      } else if (!input$optsClustered) {
         design_result(
           tagList(strat_txt)
         )
       }
-
     }
 
     shinybusy::remove_modal_spinner()
