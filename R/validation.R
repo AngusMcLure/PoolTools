@@ -26,6 +26,18 @@ need_ge0 <- function(expr, var) {
   }
 }
 
+in_range <- function(input = input, inputId, range, inc_lower) {
+  otherId <- paste0(inputId, "Other")
+  if (input[[inputId]] == "other") {
+    if (inc_lower) {
+      return(input[[otherId]] >= range[1] && input[[otherId]] <= range[2])
+    } else {
+      return(input[[otherId]] > range[1] && input[[otherId]] <= range[2])
+    }
+  }
+  TRUE # Return TRUE by default if condition is not "other"
+}
+
 ## fileAnalyse column checks
 is_binary_col <- function(df, col) {
   all(unique(df[[col]]) == c(0, 1))

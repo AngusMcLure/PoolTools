@@ -383,12 +383,12 @@ server <- function(input, output, session) {
       tags$br(),
       tags$br(),
       selectInputTT("optsPrevalence", "Prevalence",
-        tooltip = "tooltip",
+        tooltip = "The proportion of units that carry the marker of interest",
         choices = c(
           "Low (0.1%)" = 0.001,
           "Med. (0.5%)" = 0.005,
           "High (2%)" = 0.02,
-          "Other" = "other"
+          "Other %" = "other"
         ),
         selected = 0.005
       ),
@@ -399,12 +399,12 @@ server <- function(input, output, session) {
       if (input$optsClustered) {
         tagList(
           selectInputTT("optsCorrelation", "Within-cluster correlation",
-            tooltip = "(0-100%) The correlation between test results within a single cluster. 100% indicates that there are no differentces between units within a single cluster.",
+            tooltip = "The correlation between test results within a single cluster.",
             choices = c(
               "Low (1%)" = 0.01,
               "Med. (10%)" = 0.1,
               "High (30%)" = 0.3,
-              "Other" = "other"
+              "Other %" = "other"
             ),
             selected = 0.1
           ),
@@ -426,13 +426,13 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings"),
         selectInputTT("optsSensitivity", "Sensitivity",
-          tooltip = "(0-100%) The probability that the test correctly identifies a true positive. 100% indicates that the test can perfectly identify all true positives.",
+          tooltip = "The probability that the test correctly identifies a true positive.",
           choices = c(
             "Low (80%)" = 0.8,
             "Med. (90%)" = 0.9,
             "High (100%)" = 1,
-            "Other" = "other"
-          ), # 0.5-1
+            "Other %" = "other"
+          ),
           selected = 1
         ),
         conditionalPanel(
@@ -440,7 +440,7 @@ server <- function(input, output, session) {
           numericInput("optsSensitivityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
         ),
         selectInputTT("optsSpecificity", "Specificity",
-          tooltip = "(0-100%) The probability that the test correctly identifies a true negative. 100% indicates that the test can perfectly identify all true negatives.",
+          tooltip = "The probability that the test correctly identifies a true negative.",
           choices = c(
             "Low (95%)" = 0.95,
             "Med. (99%)" = 0.99,
@@ -469,13 +469,37 @@ server <- function(input, output, session) {
 
         # optimise_random_prevalence ----
       ), # End of tags$details()
-
       tags$br()
     ) # End of tagList()
   }) # End Adv settings
 
+  other_valid <- reactive({
+    # Waits for advanced settings to populate before checking
+    req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    valid <- TRUE
+
+    if (!in_range(input, "optsPrevalence", c(0, 50), inc_lower = F)) valid <- FALSE
+    if (input$optsClustered) {
+      if (!in_range(input, "optsCorrelation", c(0, 50), inc_lower = F)) valid <- FALSE
+    }
+
+    if (!in_range(input, "optsSensitivity", c(50, 100), inc_lower = T)) valid <- FALSE
+    if (!in_range(input, "optsSpecificity", c(50, 100), inc_lower = T)) valid <- FALSE
+    return(valid)
+  })
+
+  output$validOther <- renderText({
+    req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    validate(
+      need(in_range(input, "optsPrevalence", c(0, 50), inc_lower = F), "Error: The recommended range for Prevalence is > 0% and <= 50%"),
+      need(in_range(input, "optsCorrelation", c(0, 50), inc_lower = F), "Error: The recommended range for Correlation is > 0% and <= 50%"),
+      need(in_range(input, "optsSensitivity", c(50, 100), inc_lower = T), "Error: The recommended range for Sensitivity is >= 50% and <= 100%"),
+      need(in_range(input, "optsSpecificity", c(50, 100), inc_lower = T), "Error: The recommended range for Correlation is >= 50 and <= 100%")
+    )
+  })
+
   output$btnDesign <- renderUI({
-    req(cost_valid())
+    req(cost_valid(), !is.null(other_valid()) && other_valid())
     actionButton("runDesign", "Run!")
   })
 
@@ -485,7 +509,7 @@ server <- function(input, output, session) {
   design_result <- reactiveVal()
 
   observeEvent(input$runDesign, {
-    req(cost_valid())
+    req(cost_valid(), other_valid())
     shinybusy::show_modal_spinner(text = "Designing...")
     Sys.sleep(1)
     # Parse input arguments ----
