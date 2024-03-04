@@ -546,48 +546,34 @@ server <- function(input, output, session) {
 
     ## Prepare text output ----
     if (analysis_type() == "optimise_sN_prevalence") {
-      # fixed sample size ----
+      # fixed sample size (clustered and unclustered) ----
       req(result_sN())
       design_result(
         sn_text(result_sN(), input$optsClustered)
       )
 
 
-    } else if (analysis_type() == "optimise_random_prevalence") { # End of fixed sample size
+    } else if (analysis_type() == "optimise_random_prevalence") {
       # Fixed sampling period ----
       req(result_randPrev())
       r <- result_randPrev()
 
-      p_units <- pluralise(r$catch$mean, "unit")
+      strat_txt <- strat_text(r, input$optsPoolStrat)
 
-      p_strat <- ""
-      p_periods <- "collection periods."
-      if (r$periods < 2) p_periods <- "collection period."
-      p_period <- paste("Sampling should be conducted over", r$periods, p_periods)
-      p_catch <- paste(
-        "We expect an average of", r$catch$mean, p_units,
-        "caught per cluster (variance:", r$catch$variance, ")."
-      )
-
-      if (input$optsPoolStrat == "pool_max_size") {
-        # max size ----
-        p_strat <- paste(
-          "For the given inputs, the optimal design is to distribute units in pools of size",
-          r$pool_strat_pars$max_size,
-          "with any remainder placed in a single smaller pool."
-        )
-      } else if (input$optsPoolStrat == "pool_target_number") {
-        # target number ----
-        p_strat <- paste(
-          "For the given inputs, the optimal design is to distribute units into",
-          r$pool_strat_pars$target_number,
-          "equally sized pools, with no maximum pool size."
+      if (input$optsClustered) {
+        period_txt <- period_text(r) # only if clustered
+        catch_txt <- catch_text(r, input$optsClustered)
+        design_result(
+          tagList(strat_txt, tags$br(), tags$br(), period_txt, tags$br(), tags$br(), catch_txt)
         )
       }
-      design_result(
-        tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
-      )
-    } # End of analysis_type() == "optimise_random_prevalence"/ fixed sampling period
+      else if (!input$optsClustered) {
+        design_result(
+          tagList(strat_txt)
+        )
+      }
+
+    }
 
     shinybusy::remove_modal_spinner()
   })

@@ -3,11 +3,6 @@ pluralise <- function(obj, text) {
   else text
 }
 
-has_periods <- function(randprev_output, clustered) {
-  if (!clustered && is.na(randprev_output$periods)) return(FALSE)
-  return(TRUE)
-}
-
 sn_text <- function(snprev_output, clustered) {
   r <- snprev_output
   pre_txt <- "For the given inputs, the optimal design is to sample "
@@ -34,26 +29,25 @@ strat_text <- function(randprev_output, pool_strat) {
   } else if (pool_strat == "pool_target_number") {
     paste0(
       pre, "into ", r$pool_strat_pars$target_number,
-      "equally sized pools, with no maximum pool size."
+      " equally sized pools, with no maximum pool size."
     )
   }
 }
 
 period_text <- function(randprev_output) {
-  # check has_periods before running this
   r <- randprev_output
-  p <- pluralise(r$periods, "collection period")
-  paste0("Sampling should be conducted over ", r$periods, " ", p, ".")
+  p_periods <- pluralise(r$periods, "collection period")
+  paste0("Sampling should be conducted over ", r$periods, " ", p_periods, ".")
 }
 
 catch_text <- function(randprev_output, clustered) {
   r <- randprev_output
-  p <- pluralise(r$catch$mean, "unit")
+  p_units <- pluralise(r$catch$mean, "unit")
   if (clustered) c <- "per cluster "
   else c <- ""
   paste0(
-    "We expect an average of ", r$catch$mean, p, "caught ", c, 
-    "(variance: ", r$catch$variance, "), per collection period."
+    "We expect an average of ", r$catch$mean, " ", p_units, " (variance: ",
+    r$catch$variance, ") ", "caught ", c, " per collection period."
   )
 }
 
@@ -63,4 +57,3 @@ paste_randprev <- function() {
     tagList(p_strat, tags$br(), tags$br(), p_period, tags$br(), tags$br(), p_catch)
   )
 }
-  
