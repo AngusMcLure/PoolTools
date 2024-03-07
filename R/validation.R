@@ -1,7 +1,7 @@
 # Helper functions for validation ----
 is_filled <- function(input) {
   # Checks for non-empty reactive input
-  !is.null(input) && input != ""
+  !is.null(input) && !is.na(input) && input != ""
 }
 
 need_gt0 <- function(expr, var) {

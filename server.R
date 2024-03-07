@@ -135,7 +135,7 @@ server <- function(input, output, session) {
     if (!is.null(input$optsHierarchy) && input$optsHierarchy) {
       tagList(
         bucket_list(
-          header = "Drag to include hierarchical variables and reorder from largest to smallest",
+          header = "Drag to select variables. Reorder variables from the largest to smallest sampling area (e.g. province > village > hosuehold.)",
           orientation = "horizontal", # doesn't work in sidebar?
           add_rank_list(
             text = "Hierarchical variables",
@@ -167,7 +167,11 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings"),
         numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
-        checkboxInput("optsBayesian", "Bayesian calculations (slow)")
+        conditionalPanel(
+          # Show bayesian option for PoolPrev only
+          condition = "input.optsHierarchy == false",
+          checkboxInput("optsBayesian", "Bayesian calculations (slow)")
+        )
       ),
       tags$br()
     )
@@ -475,27 +479,58 @@ server <- function(input, output, session) {
 
   other_valid <- reactive({
     # Waits for advanced settings to populate before checking
-    req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    req(cost_valid())
     valid <- TRUE
 
-    if (!in_range(input, "optsPrevalence", c(0, 50), inc_lower = F)) valid <- FALSE
-    if (input$optsClustered) {
-      if (!in_range(input, "optsCorrelation", c(0, 50), inc_lower = F)) valid <- FALSE
-    }
+    # TODO: Refactor this mess
+    print("---")
+    print(paste("is_filled(input$optsClustered)", is_filled(input$optsClustered)))
+    print(paste("input$optsClustered", input$optsClustered))
+    print(paste("input$optsClustered == 'other'", input$optsClustered == "other"))
+    print(paste("is_filled(input$optsCorrelationOther)", is_filled(input$optsCorrelationOther)))
 
-    if (!in_range(input, "optsSensitivity", c(50, 100), inc_lower = T)) valid <- FALSE
-    if (!in_range(input, "optsSpecificity", c(50, 100), inc_lower = T)) valid <- FALSE
+    if (is_filled(input$optsPrevalence) && input$optsPrevalence == "other") {
+      if (is_filled(input$optsPrevalenceOther) && !in_range(input, "optsPrevalence", c(0, 50), inc_lower = F) || !is_filled(input$optsPrevalenceOther)) valid <- FALSE
+    }
+    if (is_filled(input$optsSensitivity) && input$optsSensitivity == "other") {
+      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSensitivity", c(50, 100), inc_lower = T) || !is_filled(input$optsSensitivityOther)) valid <- FALSE
+    }
+    if (is_filled(input$optsSpecificity) && input$optsSpecificity == "other") {
+      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSpecificity", c(50, 100), inc_lower = T || !is_filled(input$optsSpecificityOther))) valid <- FALSE
+    }
+    if (is_filled(input$optsClustered) && input$optsClustered && is_filled(input$optsCorrelation) && input$optsCorrelation == "other") {
+      if (is_filled(input$optsCorrelationOther) && !in_range(input, "optsCorrelation", c(0, 50), inc_lower = T) || !is_filled(input$optsCorrelationOther)) valid <- FALSE
+    }
     return(valid)
   })
 
-  output$validOther <- renderText({
-    req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
-    validate(
-      need(in_range(input, "optsPrevalence", c(0, 50), inc_lower = F), "Error: The recommended range for Prevalence is > 0% and <= 50%"),
-      need(in_range(input, "optsCorrelation", c(0, 50), inc_lower = F), "Error: The recommended range for Correlation is > 0% and <= 50%"),
-      need(in_range(input, "optsSensitivity", c(50, 100), inc_lower = T), "Error: The recommended range for Sensitivity is >= 50% and <= 100%"),
-      need(in_range(input, "optsSpecificity", c(50, 100), inc_lower = T), "Error: The recommended range for Correlation is >= 50 and <= 100%")
-    )
+  output$uiValidOther <- renderText({
+    # Waits for advanced settings to populate before checking
+    # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    req(cost_valid())
+    paste("Other valid", other_valid())
+    # TODO: Refactor this mess
+    if (is_filled(input$optsPrevalence) && input$optsPrevalence == "other" && is_filled(input$optsPrevalenceOther)) {
+      validate(
+        need(in_range(input, "optsPrevalence", c(0, 50), inc_lower = F), "Error: The recommended range for Prevalence is > 0% and <= 50%"),
+      )
+    }
+    if (is_filled(input$optsSensitivity) && input$optsSensitivity == "other" && is_filled(input$optsSensitivityOther)) {
+      validate(
+        need(in_range(input, "optsSensitivity", c(50, 100), inc_lower = T), "Error: The recommended range for Sensitivity is >= 50% and <= 100%"),
+      )
+    }
+    if (is_filled(input$optsSpecificity) && input$optsSpecificity == "other" && is_filled(input$optsSpecificityOther)) {
+      validate(
+        need(in_range(input, "optsSpecificity", c(50, 100), inc_lower = T), "Error: The recommended range for Specificity is >= 50% and <= 100%"),
+      )
+    }
+    if (is_filled(input$optsClustered) && input$optsClustered && input$optsCorrelation == "other" && is_filled(input$optsCorrelationOther)) {
+      validate(
+        need(in_range(input, "optsCorrelation", c(1, 50), inc_lower = T), "Error: The recommended range for Correlation is > 0% and <= 50%"),
+      )
+    }
   })
 
   output$btnDesign <- renderUI({

@@ -126,7 +126,7 @@ ui <- fluidPage(
           uiOutput("uiCost"),
           uiOutput("uiParams"),
           uiOutput("uiAdvanced"),
-          textOutput("validOther"),
+          textOutput("uiValidOther"),
           uiOutput("btnDesign")
         ), # End of sidebarPanel ------------------------------
 
