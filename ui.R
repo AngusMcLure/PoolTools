@@ -1,4 +1,6 @@
 ui <- fluidPage(
+  # Dropdown boxes appear over panels
+  tags$head(tags$style(".selectize-control.single { width: 100%; z-index: 1; }")),
   ## Main navbar and pages
   navbarPage("PoolTools",
     id = "main_nav",
@@ -38,6 +40,7 @@ ui <- fluidPage(
       h2("Analyse pooled data"),
       br(),
       sidebarLayout(
+        fluid = T,
         sidebarPanel(
           style = "max-height: 75vh; overflow-y: auto;",
           fileInput(

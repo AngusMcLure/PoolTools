@@ -1,13 +1,15 @@
 ## Input UIs with tooltips ----
 selectInputTT <- function(input_id, label, tooltip, choices, selected = NULL) {
-  selectInput(
+  selectizeInput(
     input_id,
     tags$span(
       label,
       shinyBS::tipify(icon("info-circle"), tooltip, placement = "right")
     ),
     choices = choices,
-    selected = selected
+    selected = selected,
+    # Dropdowns appear on top of panels
+    options = list(dropdownParent = 'body'),
   )
 }
 
