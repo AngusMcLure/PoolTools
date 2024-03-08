@@ -196,35 +196,11 @@ server <- function(input, output, session) {
       poolSize = input$colUnitNumber
     )
 
-    if (!input$optsHierarchy) {
-      # Add bayesian switch for PoolPrev
-      poolprev_args <- req_args
-      poolprev_args$bayesian <- input$optsBayesian
-      if (!input$optsStratify) {
-        # Estimate prevalence on whole data
-        result(do.call(PoolTestR::PoolPrev, poolprev_args))
-      } else {
-        # Estimate prevalence for each selected column (stratified)
-        # Parse arguments
-        col_args <- c(poolprev_args, lapply(input$optsColStratify, as.name))
-        result(do.call(PoolTestR::PoolPrev, col_args))
-      }
-    } else if (input$optsHierarchy) {
-      # Account for hierarchical sampling structure
-      hier_args <- req_args
-      hier_args$hierarchy <- input$optsHierarchyOrder
-      # Parse arguments for stratification
-      if (input$optsStratify) {
-        hier_args <- c(hier_args, lapply(input$optsColStratify, as.name))
-      }
-      result(do.call(PoolTestR::HierPoolPrev, hier_args))
-    } else {
-      result(NULL)
-    }
-    result(
-      result() %>%
-        dplyr::mutate(across(is.double, round, digits = as.integer(input$optsRoundAnalyse)))
+    data <- run_pooltestr(
+      req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
+      input$optsBayesian, input$optsRoundAnalyse, input$optsColStratify
     )
+    result(data)
     shinybusy::remove_modal_spinner()
   })
 
