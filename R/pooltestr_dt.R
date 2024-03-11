@@ -27,6 +27,23 @@ round_with_trailing <- function(x, digits) {
   sprintf(paste0("%.", digits, "f"), round(x, digits))
 }
 
+round_mle <- function(df, round_digits) {
+  df %>% dplyr::mutate(
+    across(
+      c(`Prevalence (Maximum Likelihood Estimate)`, `Lower Confidence Interval (95%)`, `Upper Confidence Interval (95%)`),
+      ~ round_with_trailing(., round_digits)
+    )
+  )
+}
+
+round_bayes <- function(df, round_digits) {
+  df %>% dplyr::mutate(
+    across(
+      c(`Prevalence (Bayesian)`, `Lower Credible Interval (95%)`, `Upper Credible Interval (95%)`),
+      ~ round_with_trailing(., round_digits)
+    )
+  )
+}
 # PoolTestR ----
 
 run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, round_digits, stratify_vars) {
@@ -49,9 +66,16 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, ro
         rename_mle() %>%
         rename_pools()
     }
+    # Round
+    data <- data %>% round_mle(round_digits)
+
     if (bayesian) {
-      data <- data %>% rename_bayes()
+      data <- data %>%
+        rename_bayes() %>%
+        round_bayes(round_digits)
     }
+
+
   } else if (hierarchy) {
     # Account for hierarchical sampling structure
     hier_args <- req_args
@@ -63,7 +87,8 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, ro
     data <-
       do.call(PoolTestR::HierPoolPrev, hier_args) %>%
       rename_bayes() %>%
-      rename_pools()
+      rename_pools() %>%
+      round_bayes(round_digits)
   } else {
     return(NULL)
   }
@@ -72,20 +97,6 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, ro
   if ("ProbAbsent" %in% names(data)) {
     data <- data %>% select(-ProbAbsent)
   }
-  data <- data %>%
-    # Ensures that pools do not get rounded
-    dplyr::mutate(
-      across(
-        c(`Number of Positive Pools`, `Number of Positive Pools`),
-        as.integer
-      )
-    ) %>%
-    dplyr::mutate(
-      across(
-        where(is.double),
-        ~ round_with_trailing(., round_digits)
-      )
-    )
 
   return(data)
 }
