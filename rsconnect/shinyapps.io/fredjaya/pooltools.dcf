@@ -5,6 +5,6 @@ account: fredjaya
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10880234
-bundleId: 8342617
+bundleId: 8356360
 url: https://fredjaya.shinyapps.io/pooltools/
 version: 1

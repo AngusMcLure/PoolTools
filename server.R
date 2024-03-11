@@ -99,7 +99,7 @@ server <- function(input, output, session) {
       tagList(
         checkboxGroupInput(
           "optsColStratify",
-          tags$span("Stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
+          tags$span("Select which columns from your data to stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
           choices = metadata_cols()
         ),
         textOutput("validStratify")
@@ -180,7 +180,7 @@ server <- function(input, output, session) {
 
   output$btnAnalyse <- renderUI({
     req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
-    actionButton("optsAnalyse", "Run!")
+    actionButton("optsAnalyse", "Estimate prevalence")
   })
 
   ## Table output
@@ -206,7 +206,9 @@ server <- function(input, output, session) {
 
   output$outDT <- renderDataTable({
     req(result())
-    result()
+    datatable(
+      result(), rownames = F
+    )
   })
 
   output$outAnalyse <- renderUI({
