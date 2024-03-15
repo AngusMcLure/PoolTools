@@ -9,7 +9,7 @@ selectInputTT <- function(input_id, label, tooltip, choices, selected = NULL) {
     choices = choices,
     selected = selected,
     # Dropdowns appear on top of panels
-    options = list(dropdownParent = 'body'),
+    options = list(dropdownParent = "body"),
   )
 }
 

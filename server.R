@@ -60,17 +60,17 @@ server <- function(input, output, session) {
   output$colSelectTestResults <- renderUI({
     req(data())
     selectInputTT("colTestResults", "Test results",
-      tooltip = "tooltip",
-      choices = c("Select column" = "", names(data()))
+      tooltip = "Select one column from your data that contains the positive (1)/negative (0) pool results",
+      choices = c("Select column or type to search" = "", names(data()))
     )
   })
   output$colSelectUnitNumber <- renderUI({
     req(data())
     cols <- names(data())
     cols <- cols[!cols %in% input$colTestResults]
-    selectInputTT("colUnitNumber", "Number of specimens per pool",
-      tooltip = "tooltip",
-      choices = c("Select column" = "", cols)
+    selectInputTT("colUnitNumber", "Number of units per pool",
+      tooltip = "Select the column from your data that contains the number of units per pool",
+      choices = c("Select column or type to search" = "", cols)
     )
   })
   output$validColSelect <- renderText({
@@ -87,7 +87,7 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsStratify", "Stratify data?",
-        tooltip = "Uncheck to estimate prevalence on the whole data set",
+        tooltip = "Check box to calculate prevalence estimates for multiple strata within the dataset. Uncheck to calculate a single prevalence estimate for the whole dataset",
         value = T
       )
     )
@@ -99,7 +99,7 @@ server <- function(input, output, session) {
       tagList(
         checkboxGroupInput(
           "optsColStratify",
-          tags$span("Select which columns from your data to stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
+          tags$span("Select columns from your data to stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
           choices = metadata_cols()
         ),
         textOutput("validStratify")
@@ -115,7 +115,7 @@ server <- function(input, output, session) {
     validate(
       need(
         !is.null(input$optsColStratify),
-        "Error: Select at least one strata, or deselect 'Stratify data?' to estimate prevalence on the whole dataset"
+        "Select at least one column (variable) to stratify the data by, or deselect 'Stratify data?' to estimate prevalence on the whole dataset"
       )
     )
   })
@@ -126,7 +126,7 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsHierarchy", "Adjust for hierarchical sampling?",
-        tooltip = "tooltip", value = FALSE
+        tooltip = "Apply a hierarchical model to minimise overestimating confidence/credible intervals", value = FALSE
       )
     )
   })
@@ -207,7 +207,8 @@ server <- function(input, output, session) {
   output$outDT <- renderDataTable({
     req(result())
     datatable(
-      result(), rownames = F
+      result(),
+      rownames = F
     )
   })
 

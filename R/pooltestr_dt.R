@@ -74,8 +74,6 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, ro
         rename_bayes() %>%
         round_bayes(round_digits)
     }
-
-
   } else if (hierarchy) {
     # Account for hierarchical sampling structure
     hier_args <- req_args
