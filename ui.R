@@ -2,7 +2,7 @@ ui <- fluidPage(
   # Dropdown boxes appear over panels
   tags$head(tags$style(".selectize-control.single { width: 100%; z-index: 1; }")),
   ## Main navbar and pages
-  navbarPage("PoolTools",
+  navbarPage(paste0("PoolTools v", appVersion),
     id = "main_nav",
     tabPanel(
       "Home",

@@ -189,7 +189,6 @@ server <- function(input, output, session) {
   observeEvent(input$optsAnalyse, {
     req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
     shinybusy::show_modal_spinner(text = "Analysing...")
-    Sys.sleep(1)
     req_args <- list(
       data = data(),
       result = input$colTestResults,
@@ -463,6 +462,7 @@ server <- function(input, output, session) {
     valid <- TRUE
 
     # TODO: Refactor this mess
+    # TODO: Remove prints!!
     print("---")
     print(paste("is_filled(input$optsClustered)", is_filled(input$optsClustered)))
     print(paste("input$optsClustered", input$optsClustered))
