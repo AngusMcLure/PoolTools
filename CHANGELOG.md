@@ -11,3 +11,4 @@ and this project adheres to
 ### Added  
 - Changelog and versioning.  
 - Version is displayed in app title.  
+- Dev files.  

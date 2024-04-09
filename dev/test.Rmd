@@ -2,7 +2,9 @@
 title: "Untitled"
 author: "Fred Jaya"
 date: '2024-01-18'
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,34 +14,96 @@ library(dplyr)
 devtools::load_all("~/GitHub/PoolPoweR/")
 ```
 
-## Use cases
+## Analyse (PoolTestR)
 
-Analyse (PoolTestR)
+The different Analyse modes are:  
+1. Whole data set (PoolPrev)  
+2. Stratified (PoolPrev)
+3. Whole Prev + Bayesian
+4. Strat Prev + Bayesian  
+5. Hierarchical (HierPoolPrev)
+6. Hierarchical + stratified  
 
-Design (PoolPoweR)
-├
 ```{r}
 simple <- SimpleExampleData
+
+# Arguments shared across all functions  
+req_args <- list(
+     data = simple, #data(),
+     result = "Result", #input$colTestResults,
+     poolSize = "NumInPool" #input$colUnitNumber
+   )
 ```
 
+### 1. Whole data set (PoolPrev)  
 ```{r}
-PrevWholeDataset <- PoolPrev(simple, Result, NumInPool, bayesian = F)
+#stratify_vars = NULL
+args <- req_args
+args$bayesian <- FALSE
+
+PrevWholeDataset <- do.call(PoolTestR::PoolPrev, args)
 PrevWholeDataset
-PrevWholeDataset %>% mutate(across(is.double, round, digits = 4))
+# TODO: Rounding, Rename MLE columns, Remove ProbAbsent, Output 1/1000
 ```
+### 2. Stratified (PoolPrev)
 ```{r}
-PrevByRegionYear <- PoolPrev(simple, Result, NumInPool, Region, Year, bayesian = F)
-PrevByRegionYear
-PrevByRegionYear %>% mutate(across(is.double, round, digits = 4))
+stratify_vars = c("Region", "Year")
+args <- c(req_args, lapply(stratify_vars, as.name))
+args$bayesian <- FALSE
+
+PrevStrat <- do.call(PoolTestR::PoolPrev, args)
+PrevStrat
+
+#write.csv(PrevStrat, "prev_out.csv", row.names = F)
 ```
 
+### 3. Stratified + Bayes 
 ```{r}
-PrevByHier <- HierPoolPrev(simple, Result, NumInPool,
-  hierarchy = c("Village", "Site"), Year
-)
-PrevByHier
-PrevByHier %>% mutate(across(is.double, round, digits = 4))
+stratify_vars = c("Region", "Year")
+args <- c(req_args, lapply(stratify_vars, as.name))
+args$bayesian <- TRUE
+
+PrevStratBayes <- do.call(PoolTestR::PoolPrev, args)
+PrevStratBayes
+# TODO: Rounding, Rename MLE columns, Remove ProbAbsent, Output 1/1000
 ```
+
+### 3. Stratified with bayesian
+
+```{r}
+stratify_vars = c("Region", "Year")
+args <- c(req_args, lapply(stratify_vars, as.name))
+args$bayesian <- TRUE
+
+PrevRegionYearB <- do.call(PoolTestR::PoolPrev, args)
+PrevRegionYearB
+# TODO: Rounding, Rename MLE and Bayes columns, Remove ProbAbsent, Output 1/1000, 
+```
+
+### 4. HierPoolPrev
+```{r}
+hier_vars <- c("Village", "Site")
+args <- req_args
+args$hierarchy <- hier_vars
+
+PrevHier <- do.call(PoolTestR::HierPoolPrev, args)
+PrevHier
+#PrevByHier %>% mutate(across(is.double, round, digits = 4))
+# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000 
+```
+
+### 5. HierPoolPrev stratified
+```{r}
+hier_vars <- c("Village", "Site")
+args <- c(req_args, lapply(stratify_vars, as.name))
+args$hierarchy <- hier_vars
+
+PrevHierStrat <- do.call(PoolTestR::HierPoolPrev, args)
+PrevHierStrat
+#PrevHierStrat %>% mutate(across(is.double, round, digits = 4))
+# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000 
+```
+
 
 ---
 
