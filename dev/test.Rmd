@@ -27,17 +27,17 @@ The different Analyse modes are:
 ```{r}
 simple <- SimpleExampleData
 
-# Arguments shared across all functions  
+# Arguments shared across all functions
 req_args <- list(
-     data = simple, #data(),
-     result = "Result", #input$colTestResults,
-     poolSize = "NumInPool" #input$colUnitNumber
-   )
+  data = simple, # data(),
+  result = "Result", # input$colTestResults,
+  poolSize = "NumInPool" # input$colUnitNumber
+)
 ```
 
 ### 1. Whole data set (PoolPrev)  
 ```{r}
-#stratify_vars = NULL
+# stratify_vars = NULL
 args <- req_args
 args$bayesian <- FALSE
 
@@ -45,21 +45,22 @@ PrevWholeDataset <- do.call(PoolTestR::PoolPrev, args)
 PrevWholeDataset
 # TODO: Rounding, Rename MLE columns, Remove ProbAbsent, Output 1/1000
 ```
+
 ### 2. Stratified (PoolPrev)
 ```{r}
-stratify_vars = c("Region", "Year")
+stratify_vars <- c("Region", "Year")
 args <- c(req_args, lapply(stratify_vars, as.name))
 args$bayesian <- FALSE
 
 PrevStrat <- do.call(PoolTestR::PoolPrev, args)
 PrevStrat
 
-#write.csv(PrevStrat, "prev_out.csv", row.names = F)
+# write.csv(PrevStrat, "prev_out.csv", row.names = F)
 ```
 
 ### 3. Stratified + Bayes 
 ```{r}
-stratify_vars = c("Region", "Year")
+stratify_vars <- c("Region", "Year")
 args <- c(req_args, lapply(stratify_vars, as.name))
 args$bayesian <- TRUE
 
@@ -71,13 +72,13 @@ PrevStratBayes
 ### 3. Stratified with bayesian
 
 ```{r}
-stratify_vars = c("Region", "Year")
+stratify_vars <- c("Region", "Year")
 args <- c(req_args, lapply(stratify_vars, as.name))
 args$bayesian <- TRUE
 
 PrevRegionYearB <- do.call(PoolTestR::PoolPrev, args)
 PrevRegionYearB
-# TODO: Rounding, Rename MLE and Bayes columns, Remove ProbAbsent, Output 1/1000, 
+# TODO: Rounding, Rename MLE and Bayes columns, Remove ProbAbsent, Output 1/1000,
 ```
 
 ### 4. HierPoolPrev
@@ -88,8 +89,8 @@ args$hierarchy <- hier_vars
 
 PrevHier <- do.call(PoolTestR::HierPoolPrev, args)
 PrevHier
-#PrevByHier %>% mutate(across(is.double, round, digits = 4))
-# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000 
+# PrevByHier %>% mutate(across(is.double, round, digits = 4))
+# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000
 ```
 
 ### 5. HierPoolPrev stratified
@@ -100,10 +101,63 @@ args$hierarchy <- hier_vars
 
 PrevHierStrat <- do.call(PoolTestR::HierPoolPrev, args)
 PrevHierStrat
-#PrevHierStrat %>% mutate(across(is.double, round, digits = 4))
-# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000 
+# PrevHierStrat %>% mutate(across(is.double, round, digits = 4))
+# TODO: Rounding, Rename Bayes columns, Remove ProbAbsent, Output 1/1000
 ```
 
+## Analyse post-processing  
+
+```{r}
+PrevStrat_formatted <-
+  PrevStrat %>%
+  rename(
+    "Prevalence (Maximum Likelihood Estimate)" = PrevMLE,
+    "Lower Confidence Interval (95%)" = CILow,
+    "Upper Confidence Interval (95%)" = CIHigh,
+    "Number of Pools" = NumberOfPools,
+    "Number of Positive Pools" = NumberPositive
+  )
+
+# Functions
+prev_per_val_mle <- function(df, val) {
+  df %>%
+    dplyr::mutate(
+      across(
+        c(
+          `Prevalence (Maximum Likelihood Estimate)`,
+          `Lower Confidence Interval (95%)`,
+          `Upper Confidence Interval (95%)`
+        ),
+        ~ . / val
+      )
+    )
+}
+
+rename_perval <- function(df, val) {
+  df %>%
+    across()
+
+  rename(
+    `Prevalence (Maximum Likelihood Estimate)` = PrevMLE,
+    `Lower Confidence Interval (95%)` = CILow,
+    `Upper Confidence Interval (95%)` = CIHigh
+  )
+}
+
+
+rename_perval_bayes <- function(df) {
+  df %>%
+    rename(
+      `Prevalence (Bayesian)` = PrevBayes,
+      `Lower Credible Interval (95%)` = CrILow,
+      `Upper Credible Interval (95%)` = CrIHigh
+    )
+}
+```
+
+```{r}
+prev_per_val_mle(PrevStrat_formatted, 1000)
+```
 
 ---
 

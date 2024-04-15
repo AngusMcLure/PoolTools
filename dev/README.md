@@ -15,6 +15,11 @@ Updating the app version:
 Update the Changelog:  
 - Edit `CHANGELOG.md`  
 
+Update the documentation (currently GH wiki):  
+- https://github.com/AngusMcLure/PoolTools/wiki
+
+## Deployment  
+
 Deploying the app to shinyapps.io:  
 ```r
 rsconnect::deployApp()  
