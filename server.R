@@ -203,17 +203,12 @@ server <- function(input, output, session) {
     shinybusy::remove_modal_spinner()
   })
 
-  output$outDT <- renderDataTable({
+  output$outAnalyse <- renderDataTable({
     req(result())
     datatable(
       result(),
       rownames = F
     )
-  })
-
-  output$outAnalyse <- renderUI({
-    # Update this, so output only changes when clicking button
-    dataTableOutput("outDT")
   })
 
   output$btnDlAnalyse <- renderUI({

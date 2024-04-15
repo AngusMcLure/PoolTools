@@ -66,7 +66,7 @@ ui <- fluidPage(
             type = "tabs",
             tabPanel(
               "Results",
-              uiOutput("outAnalyse"),
+              dataTableOutput("outAnalyse"),
               uiOutput("btnDlAnalyse")
             ),
             tabPanel(
