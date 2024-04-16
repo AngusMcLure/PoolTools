@@ -6,12 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
-## Unreleased (To be deployed)  
+## [0.1.1] - 2024-04-16  
 
 ### Added  
 - Roxygen comments to R util files.  
 - `utils_dt_display.R` to handle post-pooltestr processing.  
-- Prevalence division option (default 1/2000).  
+- Prevalence multiply option (default 1*2000).  
 - CITATION file.  
 
 ### Changed  

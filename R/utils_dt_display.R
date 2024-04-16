@@ -77,41 +77,44 @@ bayes_cols <- c(
 #' Display Prevalence and CI/CrI Per Value
 #'
 #' The development of intervention plans are often determined based on the
-#' prevalence per a given value (e.g. 1/1000). This function applies this
-#' transformation.
+#' prevalence per a given value (e.g. multiplying by 2000 gives you the
+#' prevalence per 2000 units). This function applies this transformation across
+#' columns, as well as rounding (see note on rounding above).
 #'
 #' @param df dataframe PoolTestR output
 #' @param ptr_mode character String indicating PoolTestR mode used. Get from
 #' `which_pooltestr`.
-#' @param val integer Value to divide prevalence and intervals by.
-#'
+#' @param per_prev boolean Should values be displayed `per_val`?
+#' @param per_val integer Value to multiply prevalence and intervals by.
+#' @param digits integer Number of digits to round by.
+
 #' @return dataframe
-#' @name prev_per_val
-dt_display <- function(df, ptr_mode, divide_prev, divide_val, digits) {
+#' @name dt_display
+dt_display <- function(df, ptr_mode, per_prev, per_val, digits) {
   # poolprev_bayes requires both transformations
-  if (!divide_prev) {
-    # Don't divide
+  if (!per_prev) {
+    # Don't multiply
     val <- 1
   } else {
-    val <- divide_val
+    val <- per_val
   }
   if (ptr_mode %in% c("poolprev", "poolprev_strat", "poolprev_bayes")) {
     df <- df %>%
-      divide_cols(mle_cols, val) %>%
+      multiply_cols(mle_cols, val) %>%
       round_pool_cols(digits = digits, cols = mle_cols)
   }
   if (ptr_mode %in% c("poolprev_bayes", "hierpoolprev", "hierpoolprev_strat")) {
     df <- df %>%
-      divide_cols(bayes_cols, val) %>%
+      multiply_cols(bayes_cols, val) %>%
       round_pool_cols(digits = digits, cols = bayes_cols)
   }
   return(df)
 }
 
-#' @rdname divide_cols
-divide_cols <- function(df, cols, val) {
+#' @rdname dt_display
+multiply_cols <- function(df, cols, val) {
   dplyr::mutate(
     df,
-    dplyr::across(cols, ~ as.numeric(.) / val)
+    dplyr::across(cols, ~ as.numeric(.) * val)
   )
 }

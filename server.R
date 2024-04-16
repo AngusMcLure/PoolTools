@@ -176,16 +176,16 @@ server <- function(input, output, session) {
         # Prevalence and CI/CrI rounding
         numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
 
-        # Should prevalence and CI/CrI be divided by a value?
+        # Should prevalence and CI/CrI be multiplied by a value?
         checkboxInputTT(
-          "optsDividePrev",
+          "optsPerPrev",
           "Display prevalence per value",
-          tooltip = "Selecting this option will divide prevalence and interval estimates by a given value",
+          tooltip = "Selecting this option will multiply prevalence and interval estimates by a given value",
           value = F
         ),
         conditionalPanel(
-          condition = "input.optsDividePrev == true",
-          numericInput("optsDividePrevVal", label = "Value", value = 2000, min = 1, step = 1)
+          condition = "input.optsPerPrev == true",
+          numericInput("optsPerPrevVal", label = "Value", value = 2000, min = 1, step = 1)
         )
       ),
       tags$br()
@@ -223,8 +223,8 @@ server <- function(input, output, session) {
     data <- dt_display(
       df = data,
       ptr_mode = ptr_mode,
-      divide_prev = input$optsDividePrev,
-      divide_val = as.integer(input$optsDividePrevVal),
+      per_prev = input$optsPerPrev,
+      per_val = as.integer(input$optsPerPrevVal),
       digits = as.integer(input$optsRoundAnalyse)
     )
 
