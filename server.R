@@ -166,11 +166,26 @@ server <- function(input, output, session) {
       tags$details(
         tags$br(),
         tags$summary("Advanced settings"),
-        numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
+
+        # Run bayesian analysis with PoolPrev
         conditionalPanel(
-          # Show bayesian option for PoolPrev only
           condition = "input.optsHierarchy == false",
           checkboxInput("optsBayesian", "Bayesian calculations (slow)")
+        ),
+
+        # Prevalence and CI/CrI rounding
+        numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
+
+        # Should prevalence and CI/CrI be divided by a value?
+        checkboxInputTT(
+          "optsDividePrev",
+          "Display prevalence per value",
+          tooltip = "Selecting this option will divide prevalence and interval estimates by a given value",
+          value = F
+        ),
+        conditionalPanel(
+          condition = "input.optsDividePrev == true",
+          numericInput("optsDividePrevVal", label = "Value", value = 2000, min = 1, step = 1)
         )
       ),
       tags$br()
@@ -195,10 +210,24 @@ server <- function(input, output, session) {
       poolSize = input$colUnitNumber
     )
 
+    # Determine which PTR mode to run from UI settings
+    ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
+
+    # TODO: Refactor so it uses `ptr_mode`
     data <- run_pooltestr(
       req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
-      input$optsBayesian, input$optsRoundAnalyse, input$optsColStratify
+      input$optsBayesian, input$optsColStratify
     )
+
+    # Display by 1/value? And rounding
+    data <- dt_display(
+      df = data,
+      ptr_mode = ptr_mode,
+      divide_prev = input$optsDividePrev,
+      divide_val = as.integer(input$optsDividePrevVal),
+      digits = as.integer(input$optsRoundAnalyse)
+    )
+
     result(data)
     shinybusy::remove_modal_spinner()
   })

@@ -6,15 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
-## [0.1.1] - 2024-04-15  
-
-Maintenance/dev fixes that shouldn't change functionality.  
+## [0.1.1] - 2024-04-16  
 
 ### Added  
-- roxygen comments to R util files.  
+- Roxygen comments to R util files.  
+- `utils_dt_display.R` to handle post-pooltestr processing.  
+- Prevalence division option (default 1/2000).  
 
 ### Changed  
-- Minor refactoring.  
+- Refactored pooltestr-related code.  
+- Analyse prevalence rounding now part of `utils_dt_display.R`  
 
 ### Removed  
 - Redundant analyse datatable UI.  
