@@ -29,11 +29,7 @@ ui <- fluidPage(
     ),
     tabPanel(
       "About",
-      h2("About PoolTools"),
-      h3("How to cite"),
-      h3("Relevant papers"),
-      h3("Contact"),
-      h3("Credits and acknowledgements")
+      includeMarkdown("inst/app/www/about.md")
     ),
     tabPanel(
       "Analyse",

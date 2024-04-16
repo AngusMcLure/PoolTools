@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: PoolTools
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Angus
+    family-names: McLure
+    affiliation: The Australian National University
+    orcid: 'https://orcid.org/0000-0003-2890-2703'
+  - given-names: Helen
+    family-names: Mayfield
+    orcid: 'https://orcid.org/0000-0003-3462-4324'
+    affiliation: The University of Queensland
+  - given-names: Frederick
+    family-names: Jaya
+    affiliation: The Australian National University
+    orcid: 'https://orcid.org/0000-0002-4019-7026'
+  - given-names: Ward
+    family-names: Selina
+    affiliation: The University of Queensland
+    orcid: 'https://orcid.org/0000-0002-7776-8419'
+identifiers:
+  - type: url
+    value: 'https://github.com/AngusMcLure/PoolTools'
+repository-code: 'https://github.com/AngusMcLure/PoolTools'
+abstract: >-
+  An interactive Shiny web app to analyse and design pooled
+  surveys
+keywords:
+  - R
+  - Shiny
+  - Pooled testing
