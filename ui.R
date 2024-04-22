@@ -43,8 +43,8 @@ ui <- fluidPage(
             "fileAnalyse",
             accept = c(".csv", ".xlsx"),
             tags$span(
-              "Upload data",
-              shinyBS::tipify(icon("info-circle"), "Supported formats: .csv, .xlsx", placement = "right")
+              "Upload data (.xlsx or .csv)",
+              shinyBS::tipify(icon("info-circle"), "See Help tab for formatting requirements", placement = "right")
             )
           ),
           uiOutput("colSelectTestResults"),
@@ -67,23 +67,7 @@ ui <- fluidPage(
             ),
             tabPanel(
               "Help",
-              h2("How to analyse pooled data"),
-              p("This mode estimates the prevalence of a
-                                  marker in a population based on tests performed
-                                  on pooled samples."),
-              p("The marker prevalence can be estimated across
-                                  different categories, such as per-site or
-                                  per-village, if provided."),
-              p("Lastly, a hierarchical model can be applied
-                                  to avoid biased prevalence estimates."),
-              h3("Basic usage"),
-              tags$ul(
-                tags$li("Input data requirements"),
-                tags$li("Column selection"),
-                tags$li("Estimate prevalence settings (PoolPrev)"),
-                tags$li("Adjust for hierarchial sampling (HierPoolPrev)"),
-                tags$li("Advanced settings")
-              )
+              includeMarkdown("inst/app/www/help_analyse.md")
             )
           )
         )
@@ -137,7 +121,10 @@ ui <- fluidPage(
               tags$br(),
               uiOutput("outDesign")
             ),
-            tabPanel("Help", NULL)
+            tabPanel(
+              "Help",
+              includeMarkdown("inst/app/www/help_design.md")
+            )
           )
         )
       ) # End of sidebarLayout -------------------------------
