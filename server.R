@@ -165,7 +165,7 @@ server <- function(input, output, session) {
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$details(
         tags$br(),
-        tags$summary("Advanced settings"),
+        tags$summary("Advanced settings", style = "display: list-item;"),
 
         # Run bayesian analysis with PoolPrev
         conditionalPanel(
@@ -430,7 +430,7 @@ server <- function(input, output, session) {
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$details(
         tags$br(),
-        tags$summary("Advanced settings"),
+        tags$summary("Advanced settings", style = "display: list-item;"),
         selectInputTT("optsSensitivity", "Sensitivity",
           tooltip = "The probability that the test correctly identifies a true positive.",
           choices = c(
