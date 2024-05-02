@@ -241,7 +241,9 @@ server <- function(input, output, session) {
   })
 
   output$btnDlAnalyse <- renderUI({
-    req(hierarchy_valid(), result())
+    # Show download button only when the result() dataframe changes
+    # result() depends on the button input$optsAnalyse
+    req(result())
     downloadButton("dlAnalyse", "Download results")
   })
 
