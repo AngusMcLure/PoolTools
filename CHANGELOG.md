@@ -8,8 +8,15 @@ and this project adheres to
 
 ## [0.1.3] - Unreleased
 
+Important UI changes to "Analyse" mode and cleaning up back-end reactivity.  
+
 ### Changed
 - Dropdown arrow for html details appears on browser.  
+- Download button no longer disappears when `hierarchy_valid()` changes.  
+- "Real-time" formatting of analyse datatable output i.e. does not require
+re-analysis with button click. Options include rounding and displaying
+prevalence per value.  
+- Moved datatable formatting options from Advanced settings to Display options   
 
 ## [0.1.2] - 2024-04-22  
 

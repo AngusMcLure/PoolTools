@@ -159,33 +159,51 @@ server <- function(input, output, session) {
     )
   })
 
-  output$optsSettings <- renderUI({
+
+  output$uiDisplay <- renderUI({
+    req(hierarchy_valid())
+    tagList(
+      tags$hr(style = "border-top: 1px solid #CCC;"),
+      tags$b("Display settings"),
+      tags$br(),
+      tags$br(),
+
+      # Prevalence and CI/CrI rounding
+      numericInput(
+        "optsRoundAnalyse",
+        tags$p("Decimal places (prevalence)", style = "font-weight: normal"),
+        value = 4
+      ),
+
+      # Should prevalence and CI/CrI be multiplied by a value?
+      numericInput(
+        "optsPerPrevVal",
+        tags$span(
+          tags$b("Prevalence per value", style = "font-weight: normal"),
+          shinyBS::tipify(
+            icon("info-circle"),
+            "Multiply prevalence and interval estimates by a given value",
+            placement = "right"
+          )
+        ),
+        value = 1,
+        min = 1,
+        step = 1
+      )
+    )
+  })
+
+  output$uiAnalyseAdv <- renderUI({
     req(hierarchy_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       tags$details(
-        tags$br(),
         tags$summary("Advanced settings", style = "display: list-item;"),
 
         # Run bayesian analysis with PoolPrev
         conditionalPanel(
           condition = "input.optsHierarchy == false",
           checkboxInput("optsBayesian", "Bayesian calculations (slow)")
-        ),
-
-        # Prevalence and CI/CrI rounding
-        numericInput("optsRoundAnalyse", "Number of decimal places to display", value = 4),
-
-        # Should prevalence and CI/CrI be multiplied by a value?
-        checkboxInputTT(
-          "optsPerPrev",
-          "Display prevalence per value",
-          tooltip = "Selecting this option will multiply prevalence and interval estimates by a given value",
-          value = F
-        ),
-        conditionalPanel(
-          condition = "input.optsPerPrev == true",
-          numericInput("optsPerPrevVal", label = "Value", value = 2000, min = 1, step = 1)
         )
       ),
       tags$br()
@@ -194,15 +212,12 @@ server <- function(input, output, session) {
 
 
   output$btnAnalyse <- renderUI({
-    req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
+    req(hierarchy_valid())
     actionButton("optsAnalyse", "Estimate prevalence")
   })
 
-  ## Table output
-  result <- reactiveVal()
-
-  observeEvent(input$optsAnalyse, {
-    req(data(), colselect_valid(), stratify_valid(), hierarchy_valid())
+  pooltestr_out <- eventReactive(input$optsAnalyse, {
+    # TODO: Fix eventReactive so table doesn't disappear when button does
     shinybusy::show_modal_spinner(text = "Analysing...")
     req_args <- list(
       data = data(),
@@ -214,36 +229,35 @@ server <- function(input, output, session) {
     ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
 
     # TODO: Refactor so it uses `ptr_mode`
-    data <- run_pooltestr(
+    out <- run_pooltestr(
       req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
       input$optsBayesian, input$optsColStratify
     )
+    shinybusy::remove_modal_spinner()
+    list(df = out, mode = ptr_mode)
+  })
 
-    # Display by 1/value? And rounding
-    data <- dt_display(
-      df = data,
-      ptr_mode = ptr_mode,
-      per_prev = input$optsPerPrev,
+  formatted_out <- reactive({
+    # Format pooltestr table output i.e. round values, or display prevalence
+    # per value
+    req(pooltestr_out())
+    dt_display(
+      df = pooltestr_out()$df,
+      ptr_mode = pooltestr_out()$mode,
       per_val = as.integer(input$optsPerPrevVal),
       digits = as.integer(input$optsRoundAnalyse)
     )
-
-    result(data)
-    shinybusy::remove_modal_spinner()
   })
 
   output$outAnalyse <- renderDataTable({
-    req(result())
-    datatable(
-      result(),
-      rownames = F
-    )
+    req(formatted_out())
+    datatable(formatted_out(), rownames = F)
   })
 
   output$btnDlAnalyse <- renderUI({
     # Show download button only when the result() dataframe changes
     # result() depends on the button input$optsAnalyse
-    req(result())
+    req(formatted_out())
     downloadButton("dlAnalyse", "Download results")
   })
 
@@ -252,7 +266,7 @@ server <- function(input, output, session) {
       paste("results_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(result(), file)
+      write.csv(formatted_out(), file)
     }
   )
 
@@ -426,7 +440,7 @@ server <- function(input, output, session) {
   })
 
   ## Advanced settings ----
-  output$uiAdvanced <- renderUI({
+  output$uiDesignAdv <- renderUI({
     req(cost_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),

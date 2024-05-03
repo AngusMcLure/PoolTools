@@ -54,7 +54,8 @@ ui <- fluidPage(
           uiOutput("colSelectStratify"),
           uiOutput("checkHierarchy"),
           uiOutput("colHierarchyOrder"),
-          uiOutput("optsSettings"),
+          uiOutput("uiDisplay"),
+          uiOutput("uiAnalyseAdv"),
           uiOutput("btnAnalyse")
         ),
         mainPanel(
@@ -62,6 +63,7 @@ ui <- fluidPage(
             type = "tabs",
             tabPanel(
               "Results",
+              br(),
               dataTableOutput("outAnalyse"),
               uiOutput("btnDlAnalyse")
             ),
@@ -108,7 +110,7 @@ ui <- fluidPage(
           uiOutput("uiRandPrev"),
           uiOutput("uiCost"),
           uiOutput("uiParams"),
-          uiOutput("uiAdvanced"),
+          uiOutput("uiDesignAdv"),
           textOutput("uiValidOther"),
           uiOutput("btnDesign")
         ), # End of sidebarPanel ------------------------------

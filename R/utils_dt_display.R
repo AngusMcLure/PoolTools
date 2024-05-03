@@ -90,22 +90,16 @@ bayes_cols <- c(
 
 #' @return dataframe
 #' @name dt_display
-dt_display <- function(df, ptr_mode, per_prev, per_val, digits) {
+dt_display <- function(df, ptr_mode, per_val, digits) {
   # poolprev_bayes requires both transformations
-  if (!per_prev) {
-    # Don't multiply
-    val <- 1
-  } else {
-    val <- per_val
-  }
   if (ptr_mode %in% c("poolprev", "poolprev_strat", "poolprev_bayes")) {
     df <- df %>%
-      multiply_cols(mle_cols, val) %>%
+      multiply_cols(mle_cols, per_val) %>%
       round_pool_cols(digits = digits, cols = mle_cols)
   }
   if (ptr_mode %in% c("poolprev_bayes", "hierpoolprev", "hierpoolprev_strat")) {
     df <- df %>%
-      multiply_cols(bayes_cols, val) %>%
+      multiply_cols(bayes_cols, per_val) %>%
       round_pool_cols(digits = digits, cols = bayes_cols)
   }
   return(df)
