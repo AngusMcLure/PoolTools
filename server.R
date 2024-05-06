@@ -56,6 +56,7 @@ server <- function(input, output, session) {
     (!input$optsHierarchy || (length(input$optsHierarchyOrder) >= 2))
   })
 
+
   ## Options
   output$colSelectTestResults <- renderUI({
     req(data())
@@ -210,10 +211,17 @@ server <- function(input, output, session) {
     )
   })
 
+  # JS version for conditionalPanel - this is to ensure that
+  output$hierarchyValid <- reactive({
+    hierarchy_valid()
+  })
+  outputOptions(output, "hierarchyValid", suspendWhenHidden = FALSE)
 
   output$btnAnalyse <- renderUI({
-    req(hierarchy_valid())
-    actionButton("optsAnalyse", "Estimate prevalence")
+    conditionalPanel(
+      condition = "output.hierarchyValid",
+      actionButton("optsAnalyse", "Estimate prevalence")
+    )
   })
 
   pooltestr_out <- eventReactive(input$optsAnalyse, {
