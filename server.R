@@ -493,7 +493,10 @@ server <- function(input, output, session) {
         if (!is.null(analysis_type()) && analysis_type() == "optimise_sN_prevalence") {
           tagList(
             numericInput("optsMaxS", "Max units per pool", value = 50, min = 1, step = 1),
-            numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
+            conditionalPanel(
+              condition = "input.optsClustered == true",
+              numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
+            )
           )
         },
 
@@ -510,13 +513,6 @@ server <- function(input, output, session) {
     valid <- TRUE
 
     # TODO: Refactor this mess
-    # TODO: Remove prints!!
-    print("---")
-    print(paste("is_filled(input$optsClustered)", is_filled(input$optsClustered)))
-    print(paste("input$optsClustered", input$optsClustered))
-    print(paste("input$optsClustered == 'other'", input$optsClustered == "other"))
-    print(paste("is_filled(input$optsCorrelationOther)", is_filled(input$optsCorrelationOther)))
-
     if (is_filled(input$optsPrevalence) && input$optsPrevalence == "other") {
       if (is_filled(input$optsPrevalenceOther) && !in_range(input, "optsPrevalence", c(0, 50), inc_lower = F) || !is_filled(input$optsPrevalenceOther)) valid <- FALSE
     }

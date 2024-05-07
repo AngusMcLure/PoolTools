@@ -16,7 +16,9 @@ Important UI changes to "Analyse" mode and cleaning up back-end reactivity.
 - "Real-time" formatting of analyse datatable output i.e. does not require
 re-analysis with button click. Options include rounding and displaying
 prevalence per value.  
-- Moved datatable formatting options from Advanced settings to Display options   
+- Moved datatable formatting options from Advanced settings to Display options. 
+- Datatable output remains stable when settings change.  
+- Remove 'max pools per cluster' option when not used.  
 
 ## [0.1.2] - 2024-04-22  
 
