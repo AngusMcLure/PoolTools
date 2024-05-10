@@ -7,7 +7,7 @@
 
 # Install PoolPoweR: github dev version
 # devtools::install_github("AngusMcLure/PoolPoweR")
-appVersion <- "0.1.2"
+appVersion <- "0.1.3"
 
 library(shiny)
 library(shinyBS)
@@ -20,9 +20,9 @@ library(PoolTestR)
 library(PoolPoweR)
 library(shinybusy)
 
-source("R/design_text.R")
-source("R/other_ui.R")
-source("R/tooltips_ui.R")
-source("R/validation.R")
-source("R/utils_dt_display.R")
-source("R/utils_pooltestr.R")
+source("R/fct_dt_display.R")
+source("R/fct_pooltestr.R")
+source("R/ui_other.R")
+source("R/ui_tooltips.R")
+source("R/utils_design_text.R")
+source("R/utils_validate.R")

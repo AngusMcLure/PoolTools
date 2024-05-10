@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
-## [0.1.3] - Unreleased
+## [0.1.3] - 2024-05-10  
 
-Important UI changes to "Analyse" mode and cleaning up back-end reactivity.  
+Important UI changes to "Analyse" mode and cleaning up back-end reactivity. 
 
 ### Changed
 - Dropdown arrow for html details appears on browser.  
@@ -19,6 +19,7 @@ prevalence per value.
 - Moved datatable formatting options from Advanced settings to Display options. 
 - Datatable output remains stable when settings change.  
 - Remove 'max pools per cluster' option when not used.  
+- Rename files to be sort-of-compliant with `golem` standards.  
 
 ## [0.1.2] - 2024-04-22  
 
