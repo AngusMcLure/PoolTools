@@ -84,23 +84,32 @@ ui <- fluidPage(
           style = "max-height: 75vh; overflow-y: auto;",
 
           # Survey options ------------------------------------
-          selectInputTT("optsObjective", "Survey objective",
-            tooltip = "tooltip",
-            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
-          ),
-          selectInputTT("optsMode", "Survey mode",
-            tooltip = "tooltip",
+          selectInputTT(
+            "optsMode",
+            "Analysis mode",
+            tooltip = "See Help tab for more information",
             choices = c(
               "Select" = "",
               "Identify cost-effective designs",
               "Calculate power of existing designs (Coming soon...)"
             )
           ),
-          selectInputTT("optsTrapping", "Collection strategy",
+          # TODO: Split Mode and the remaining below to Submode
+          selectInputTT(
+            "optsObjective",
+            "Survey objective",
+            tooltip = "tooltip",
+            choices = c("Select" = "", "Estimate prevalence", "Detect pathogen (Coming soon...)")
+          ),
+          selectInputTT(
+            "optsTrapping",
+            "Collection strategy",
             tooltip = "tooltip",
             choices = c("Select" = "", "Fixed sample size", "Fixed sampling period")
           ),
-          checkboxInputTT("optsClustered", "Clustered design?",
+          checkboxInputTT(
+            "optsClustered",
+            "Clustered design?",
             tooltip = "tooltip",
             value = TRUE
           ),

@@ -302,7 +302,7 @@ server <- function(input, output, session) {
   analysis_type <- reactive({
     req(survey_exists())
     if (input$optsObjective == "Estimate prevalence" &
-      input$optsMode == "Identify cost-effective designs") {
+        input$optsMode == "Identify cost-effective designs") {
       if (input$optsTrapping == "Fixed sample size") {
         return("optimise_sN_prevalence")
       } else if (input$optsTrapping == "Fixed sampling period") {
@@ -329,7 +329,8 @@ server <- function(input, output, session) {
     total_cost <- input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0
   })
 
-  ## RandPrev UI ----
+  ### UIs ----
+  #### RandPrev UI ----
   output$uiRandPrev <- renderUI({
     req(analysis_type() == "optimise_random_prevalence")
     tagList(
@@ -359,9 +360,10 @@ server <- function(input, output, session) {
     )
   })
 
-  ## Cost UI ----
+  #### Costs ----
+  ##### UI ----
   output$uiCost <- renderUI({
-    req(survey_exists(), analysis_type())
+    req(analysis_type())
     # Because rand prev has some additional options first
     if (analysis_type() == "optimise_random_prevalence") req(randPrev_valid())
     # Shared across all analysis types
@@ -381,6 +383,8 @@ server <- function(input, output, session) {
       textOutput("validCost")
     )
   })
+
+  ##### Server ----
 
   output$validCost <- renderText({
     req(cost_exists())
@@ -447,7 +451,7 @@ server <- function(input, output, session) {
     )
   })
 
-  ## Advanced settings ----
+  #### Advanced settings UI ----
   output$uiDesignAdv <- renderUI({
     req(cost_valid())
     tagList(
@@ -489,18 +493,15 @@ server <- function(input, output, session) {
         ),
 
 
-        # optimise_sN_prevalence ----
-        if (!is.null(analysis_type()) && analysis_type() == "optimise_sN_prevalence") {
+        ##### optimise_sN_prevalence ----
+        if (analysis_type() == "optimise_sN_prevalence") {
           tagList(
             numericInput("optsMaxS", "Max units per pool", value = 50, min = 1, step = 1),
-            conditionalPanel(
-              condition = "input.optsClustered == true",
+            if (input$optsClustered) {
               numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
-            )
+            }
           )
-        },
-
-        # optimise_random_prevalence ----
+        }
       ), # End of tags$details()
       tags$br()
     ) # End of tagList()
@@ -561,7 +562,7 @@ server <- function(input, output, session) {
     actionButton("runDesign", "Run!")
   })
 
-  # Design output generation ----
+  ### Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
   design_result <- reactiveVal()
@@ -569,8 +570,7 @@ server <- function(input, output, session) {
   observeEvent(input$runDesign, {
     req(cost_valid(), other_valid())
     shinybusy::show_modal_spinner(text = "Designing...")
-    Sys.sleep(1)
-    # Parse input arguments ----
+    #### Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
       req(is_filled(input$optsClustered))
@@ -580,9 +580,9 @@ server <- function(input, output, session) {
       rho <- NA
       cc <- NA
     }
-    # End parse input arguments ----
+    # End parse input arguments
 
-    # optimise_sN_prevalence ----
+    #### optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- PoolPoweR::optimise_sN_prevalence(
         prevalence = processOther(input, "optsPrevalence"),
@@ -599,7 +599,7 @@ server <- function(input, output, session) {
       result_sN(out)
     }
 
-    # optimise_random_prevalence ----
+    #### optimise_random_prevalence ----
     if (analysis_type() == "optimise_random_prevalence") {
       out <- PoolPoweR::optimise_random_prevalence(
         catch_mean = as.numeric(input$optsCatchMean),
@@ -621,15 +621,15 @@ server <- function(input, output, session) {
     }
 
 
-    ## Prepare text output ----
+    ### Prepare text output ----
     if (analysis_type() == "optimise_sN_prevalence") {
-      # fixed sample size (clustered and unclustered) ----
+      #### fixed sample size (clustered and unclustered) ----
       req(result_sN())
       design_result(
         sn_text(result_sN(), input$optsClustered)
       )
     } else if (analysis_type() == "optimise_random_prevalence") {
-      # Fixed sampling period ----
+      #### Fixed sampling period ----
       req(result_randPrev())
       r <- result_randPrev()
 
@@ -652,7 +652,7 @@ server <- function(input, output, session) {
   })
 
 
-  ## Output UI ----
+  ### Output UI ----
   output$outDesign <- renderUI({
     req(design_result())
     design_result()
