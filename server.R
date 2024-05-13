@@ -369,16 +369,27 @@ server <- function(input, output, session) {
     # Shared across all analysis types
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      tags$b("Costs"),
+      tags$span(
+        tags$b("Costs"),
+        shinyBS::tipify(
+          icon("info-circle"),
+          "The costs can be any type of measurement but needs to be used consistently across each input. Example costs per input include the monetary value, or the time required.",
+          placement = "right"
+        )
+      ),
       tags$br(),
-      tags$span("Input the cost for a single:"),
-      numericInput("optsCostUnit", "Unit $", value = NULL, min = 1e-6, step = 0.5),
-      numericInput("optsCostPool", "Pool $", value = NULL, min = 1e-6, step = 0.5),
+      tags$br(),
+      tags$span("Enter the cost for each individual input. Use '.' for decimals (e.g. 10.5)."),
+      tags$br(),
+      tags$br(),
+      # TODO: Each of these can be modularised
+      numericInput("optsCostUnit", "Unit", value = NULL, min = 1e-6, step = 0.5),
+      numericInput("optsCostPool", "Pool", value = NULL, min = 1e-6, step = 0.5),
       if (input$optsClustered) {
-        numericInput("optsCostCluster", "Cluster $", value = NULL, min = 1e-6, step = 0.5)
+        numericInput("optsCostCluster", "Cluster", value = NULL, min = 1e-6, step = 0.5)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        numericInput("optsCostPeriod", "Collection period $", value = NULL, min = 1e-6, step = 0.5)
+        numericInput("optsCostPeriod", "Collection period", value = NULL, min = 1e-6, step = 0.5)
       },
       textOutput("validCost")
     )
@@ -408,7 +419,19 @@ server <- function(input, output, session) {
   })
 
 
-  ## Params UI ----
+  # Store input costs after validation
+  costs <- reactiveValues(
+    unit = NULL,
+    pool = NULL,
+    cluster = NULL,
+    period = NULL
+  )
+
+  cost_inputs <- reactive({
+    c(input$optsCostUnit, input$optsCostPool, input$optsCostCluster, input$optsCostPeriod)
+  })
+
+  #### Params UI ----
   output$uiParams <- renderUI({
     req(cost_valid())
     tagList(
