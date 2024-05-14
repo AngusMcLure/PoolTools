@@ -474,7 +474,39 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Advanced settings UI ----
+  #### Advanced settings ----
+  ##### Server ----
+  design_adv_opts <- reactiveValues(
+    sens = 1,
+    spec = 1,
+    max_period = 10,
+    max_s = 50,
+    max_N = 20
+  )
+
+  observeEvent(input$optsSensitivity, {
+    # processOther divides by 100
+    design_adv_opts$sens <- processOther(input, "optsSensitivity")
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsSpecificity, {
+    # processOther divides by 100
+    design_adv_opts$spec <- processOther(input, "optsSpecificity")
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsMaxPeriod, {
+    design_adv_opts$max_period <- as.numeric(input$optsMaxPeriod)
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsMaxS, {
+    design_adv_opts$max_s <- as.numeric(input$optsMaxS)
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsMaxN, {
+    design_adv_opts$max_N <- as.numeric(input$optsMaxN)
+  }, ignoreNULL = TRUE)
+
+  ##### UI ----
   output$uiDesignAdv <- renderUI({
     req(cost_valid())
     tagList(
@@ -490,11 +522,19 @@ server <- function(input, output, session) {
             "High (100%)" = 1,
             "Other %" = "other"
           ),
-          selected = 1
+          # Ensures that either the default, or new input value is shown when
+          # the UI changes.
+          selected = isolate(design_adv_opts$sens)
         ),
         conditionalPanel(
           condition = "input.optsSensitivity == 'other'",
-          numericInput("optsSensitivityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
+          numericInput(
+            "optsSensitivityOther",
+            NULL,
+            # *100 for percentage display purposes
+            value = isolate(design_adv_opts$sens) * 100,
+            min = 50, max = 100, step = 0.01
+          )
         ),
         selectInputTT("optsSpecificity", "Specificity",
           tooltip = "The probability that the test correctly identifies a true negative.",
@@ -504,24 +544,25 @@ server <- function(input, output, session) {
             "High (100%)" = 1,
             "Other" = "other"
           ), # 0.5-1
-          selected = 1
+          selected = isolate(design_adv_opts$spec)
         ),
         conditionalPanel(
           condition = "input.optsSpecificity == 'other'",
-          numericInput("optsSpecificityOther", NULL, value = 100, min = 50, max = 100, step = 0.01)
+          # *100 for percentage display purposes
+          numericInput("optsSpecificityOther", NULL, value = isolate(design_adv_opts$spec) * 100, min = 50, max = 100, step = 0.01)
         ),
         conditionalPanel(
           condition = "input.optsTrapping == 'Fixed sampling period'",
-          numericInput("optsMaxPeriod", "Max sampling period", value = 10, min = 1, step = 1)
+          numericInput("optsMaxPeriod", "Max sampling period", value = isolate(design_adv_opts$max_period), min = 1, step = 1)
         ),
 
 
-        ##### optimise_sN_prevalence ----
+        ###### optimise_sN_prevalence ----
         if (analysis_type() == "optimise_sN_prevalence") {
           tagList(
-            numericInput("optsMaxS", "Max units per pool", value = 50, min = 1, step = 1),
+            numericInput("optsMaxS", "Max units per pool", value = isolate(design_adv_opts$max_s), min = 1, step = 1),
             if (input$optsClustered) {
-              numericInput("optsMaxN", "Max pools per cluster", value = 20, min = 1, step = 1)
+              numericInput("optsMaxN", "Max pools per cluster", value = isolate(design_adv_opts$max_N), min = 1, step = 1)
             }
           )
         }
@@ -585,7 +626,7 @@ server <- function(input, output, session) {
     actionButton("runDesign", "Run!")
   })
 
-  ### Design output generation ----
+  #### Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
   design_result <- reactiveVal()
@@ -593,7 +634,7 @@ server <- function(input, output, session) {
   observeEvent(input$runDesign, {
     req(cost_valid(), other_valid())
     shinybusy::show_modal_spinner(text = "Designing...")
-    #### Parse input arguments ----
+    ##### Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
       req(is_filled(input$optsClustered))
@@ -613,10 +654,10 @@ server <- function(input, output, session) {
         cost_pool = as.numeric(input$optsCostPool),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = processOther(input, "optsSensitivity"),
-        specificity = processOther(input, "optsSpecificity"),
-        max_s = as.numeric(input$optsMaxS),
-        max_N = as.numeric(input$optsMaxN),
+        sensitivity = design_adv_opts$sens,
+        specificity = design_adv_opts$spec,
+        max_s = design_adv_opts$max_s,
+        max_N = design_adv_opts$max_N,
         form = "logitnorm"
       )
       result_sN(out)
