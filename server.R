@@ -280,6 +280,19 @@ server <- function(input, output, session) {
 
   ## DESIGN -------------------------------------------------------------------
 
+  ### Val storage ----
+  design_opts <- reactiveValues(
+    # Design metrics
+    prev = 0.005,
+    rho = 0.1,
+    # Advanced settings
+    sens = 1,
+    spec = 1,
+    max_period = 10,
+    max_s = 50,
+    max_N = 20
+  )
+
   survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
@@ -432,6 +445,7 @@ server <- function(input, output, session) {
   })
 
   #### Params UI ----
+  ##### UI ----
   output$uiParams <- renderUI({
     req(cost_valid())
     tagList(
@@ -447,11 +461,11 @@ server <- function(input, output, session) {
           "High (2%)" = 0.02,
           "Other %" = "other"
         ),
-        selected = 0.005
+        selected = isolate(design_opts$prev)
       ),
       conditionalPanel(
         condition = "input.optsPrevalence == 'other'",
-        numericInput("optsPrevalenceOther", NULL, value = 0.5, min = 1e-6, max = 50, step = 0.01)
+        numericInput("optsPrevalenceOther", NULL, value = isolate(design_opts$prev) * 100, min = 1e-6, max = 50, step = 0.01)
       ),
       if (input$optsClustered) {
         tagList(
@@ -463,47 +477,48 @@ server <- function(input, output, session) {
               "High (30%)" = 0.3,
               "Other %" = "other"
             ),
-            selected = 0.1
+            selected = isolate(design_opts$rho)
           ),
           conditionalPanel(
             condition = "input.optsCorrelation == 'other'",
-            numericInput("optsCorrelationOther", NULL, value = 30, min = 1e-6, max = 50, step = 0.01)
+            numericInput("optsCorrelationOther", NULL, value = isolate(design_opts$rho) * 100, min = 1e-6, max = 50, step = 0.01)
           )
         )
       }
     )
   })
 
+  ##### Server ----
+  observeEvent(input$optsPrevalence, {
+    design_opts$prev <- processOther(input, "optsPrevalence")
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsCorrelation, {
+    design_opts$rho <- processOther(input, "optsCorrelation")
+  }, ignoreNULL = TRUE)
+
   #### Advanced settings ----
   ##### Server ----
-  design_adv_opts <- reactiveValues(
-    sens = 1,
-    spec = 1,
-    max_period = 10,
-    max_s = 50,
-    max_N = 20
-  )
-
   observeEvent(input$optsSensitivity, {
     # processOther divides by 100
-    design_adv_opts$sens <- processOther(input, "optsSensitivity")
+      design_opts$sens <- processOther(input, "optsSensitivity")
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsSpecificity, {
     # processOther divides by 100
-    design_adv_opts$spec <- processOther(input, "optsSpecificity")
+    design_opts$spec <- processOther(input, "optsSpecificity")
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsMaxPeriod, {
-    design_adv_opts$max_period <- as.numeric(input$optsMaxPeriod)
+    design_opts$max_period <- as.numeric(input$optsMaxPeriod)
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsMaxS, {
-    design_adv_opts$max_s <- as.numeric(input$optsMaxS)
+    design_opts$max_s <- as.numeric(input$optsMaxS)
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsMaxN, {
-    design_adv_opts$max_N <- as.numeric(input$optsMaxN)
+    design_opts$max_N <- as.numeric(input$optsMaxN)
   }, ignoreNULL = TRUE)
 
   ##### UI ----
@@ -524,7 +539,7 @@ server <- function(input, output, session) {
           ),
           # Ensures that either the default, or new input value is shown when
           # the UI changes.
-          selected = isolate(design_adv_opts$sens)
+          selected = isolate(design_opts$sens)
         ),
         conditionalPanel(
           condition = "input.optsSensitivity == 'other'",
@@ -532,7 +547,7 @@ server <- function(input, output, session) {
             "optsSensitivityOther",
             NULL,
             # *100 for percentage display purposes
-            value = isolate(design_adv_opts$sens) * 100,
+            value = isolate(design_opts$sens) * 100,
             min = 50, max = 100, step = 0.01
           )
         ),
@@ -544,25 +559,25 @@ server <- function(input, output, session) {
             "High (100%)" = 1,
             "Other" = "other"
           ), # 0.5-1
-          selected = isolate(design_adv_opts$spec)
+          selected = isolate(design_opts$spec)
         ),
         conditionalPanel(
           condition = "input.optsSpecificity == 'other'",
           # *100 for percentage display purposes
-          numericInput("optsSpecificityOther", NULL, value = isolate(design_adv_opts$spec) * 100, min = 50, max = 100, step = 0.01)
+          numericInput("optsSpecificityOther", NULL, value = isolate(design_opts$spec) * 100, min = 50, max = 100, step = 0.01)
         ),
         conditionalPanel(
           condition = "input.optsTrapping == 'Fixed sampling period'",
-          numericInput("optsMaxPeriod", "Max sampling period", value = isolate(design_adv_opts$max_period), min = 1, step = 1)
+          numericInput("optsMaxPeriod", "Max sampling period", value = isolate(design_opts$max_period), min = 1, step = 1)
         ),
 
 
         ###### optimise_sN_prevalence ----
         if (analysis_type() == "optimise_sN_prevalence") {
           tagList(
-            numericInput("optsMaxS", "Max units per pool", value = isolate(design_adv_opts$max_s), min = 1, step = 1),
+            numericInput("optsMaxS", "Max units per pool", value = isolate(design_opts$max_s), min = 1, step = 1),
             if (input$optsClustered) {
-              numericInput("optsMaxN", "Max pools per cluster", value = isolate(design_adv_opts$max_N), min = 1, step = 1)
+              numericInput("optsMaxN", "Max pools per cluster", value = isolate(design_opts$max_N), min = 1, step = 1)
             }
           )
         }
@@ -638,7 +653,7 @@ server <- function(input, output, session) {
     if (input$optsClustered) {
       # replace with switch
       req(is_filled(input$optsClustered))
-      rho <- processOther(input, "optsCorrelation")
+      rho <- design_opts$rho
       cc <- as.numeric(input$optsCostCluster)
     } else {
       rho <- NA
@@ -649,15 +664,15 @@ server <- function(input, output, session) {
     #### optimise_sN_prevalence ----
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- PoolPoweR::optimise_sN_prevalence(
-        prevalence = processOther(input, "optsPrevalence"),
+        prevalence = design_opts$prev,
         cost_unit = as.numeric(input$optsCostUnit),
         cost_pool = as.numeric(input$optsCostPool),
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = design_adv_opts$sens,
-        specificity = design_adv_opts$spec,
-        max_s = design_adv_opts$max_s,
-        max_N = design_adv_opts$max_N,
+        sensitivity = design_opts$sens,
+        specificity = design_opts$spec,
+        max_s = design_opts$max_s,
+        max_N = design_opts$max_N,
         form = "logitnorm"
       )
       result_sN(out)
