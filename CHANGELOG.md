@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
+## [0.1.4] - Unreleased  
+
+### Changed
+- Design inputs do not reset when upstream settings are changed for:
+    - Fixed sample size  
+
 ## [0.1.3] - 2024-05-10  
 
 Important UI changes to "Analyse" mode and cleaning up back-end reactivity. 

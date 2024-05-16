@@ -293,6 +293,13 @@ server <- function(input, output, session) {
     max_N = 20
   )
 
+  costs <- reactiveValues(
+    unit = NULL,
+    pool = NULL,
+    cluster = NULL,
+    period = NULL
+  )
+
   survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
@@ -396,20 +403,37 @@ server <- function(input, output, session) {
       tags$br(),
       tags$br(),
       # TODO: Each of these can be modularised
-      numericInput("optsCostUnit", "Unit", value = NULL, min = 1e-6, step = 0.5),
-      numericInput("optsCostPool", "Pool", value = NULL, min = 1e-6, step = 0.5),
+      numericInput("optsCostUnit", "Unit", value = isolate(costs$unit), min = 1e-6, step = 0.5),
+      numericInput("optsCostPool", "Pool", value = isolate(costs$pool), min = 1e-6, step = 0.5),
       if (input$optsClustered) {
-        numericInput("optsCostCluster", "Cluster", value = NULL, min = 1e-6, step = 0.5)
+        numericInput("optsCostCluster", "Cluster", value = isolate(costs$cluster), min = 1e-6, step = 0.5)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        numericInput("optsCostPeriod", "Collection period", value = NULL, min = 1e-6, step = 0.5)
+        numericInput("optsCostPeriod", "Collection period", value = isolate(costs$period), min = 1e-6, step = 0.5)
       },
       textOutput("validCost")
     )
   })
 
   ##### Server ----
+  # Update the reactive values
+  observeEvent(input$optsCostUnit, {
+    costs$unit <- input$optsCostUnit
+  }, ignoreNULL = TRUE)
 
+  observeEvent(input$optsCostPool, {
+    costs$pool <- input$optsCostPool
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsCostCluster, {
+    costs$cluster <- input$optsCostCluster
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsCostPeriod, {
+    costs$period <- input$optsCostPeriod
+  }, ignoreNULL = TRUE)
+
+  # Input validation
   output$validCost <- renderText({
     req(cost_exists())
     # Conditionally check each field is non-negative
@@ -429,19 +453,6 @@ server <- function(input, output, session) {
         "At least one of the costs must be > $0"
       )
     )
-  })
-
-
-  # Store input costs after validation
-  costs <- reactiveValues(
-    unit = NULL,
-    pool = NULL,
-    cluster = NULL,
-    period = NULL
-  )
-
-  cost_inputs <- reactive({
-    c(input$optsCostUnit, input$optsCostPool, input$optsCostCluster, input$optsCostPeriod)
   })
 
   #### Params UI ----
