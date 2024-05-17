@@ -375,13 +375,13 @@ server <- function(input, output, session) {
       tags$span("Enter the cost for each individual input. Use '.' for decimals (e.g. 10.5)."),
       tags$br(),
       tags$br(),
-      cost_ui("unit", costs),
-      cost_ui("pool", costs),
+      boundNumericInput("unit", "Cost per unit", costs),
+      boundNumericInput("pool", "Cost per pool", costs),
       if (input$optsClustered) {
-        cost_ui("cluster", costs)
+        boundNumericInput("cluster", "Cost per cluster", costs)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        cost_ui("period", costs)
+        boundNumericInput("period", "Cost per period", costs)
       },
       textOutput("validCost")
     )
@@ -398,10 +398,10 @@ server <- function(input, output, session) {
   )
 
   # Update values
-  cost_server("unit", costs)
-  cost_server("pool", costs)
-  cost_server("cluster", costs)
-  cost_server("period", costs)
+  syncNumericInput("unit", costs)
+  syncNumericInput("pool", costs)
+  syncNumericInput("cluster", costs)
+  syncNumericInput("period", costs)
 
   ###### Validation UI ----
   output$validCost <- renderText({
@@ -666,7 +666,7 @@ server <- function(input, output, session) {
       # replace with switch
       req(is_filled(input$optsClustered))
       rho <- design_opts$rho
-      cc <- as.numeric(input$optsCostCluster)
+      cc <- costs$cluster
     } else {
       rho <- NA
       cc <- NA
@@ -677,8 +677,8 @@ server <- function(input, output, session) {
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- PoolPoweR::optimise_sN_prevalence(
         prevalence = design_opts$prev,
-        cost_unit = as.numeric(input$optsCostUnit),
-        cost_pool = as.numeric(input$optsCostPool),
+        cost_unit = costs$unit,
+        cost_pool = costs$pool,
         cost_cluster = cc,
         correlation = rho,
         sensitivity = design_opts$sens,
@@ -697,9 +697,9 @@ server <- function(input, output, session) {
         catch_variance = as.numeric(input$optsCatchVar),
         pool_strat_family = get(input$optsPoolStrat),
         prevalence = processOther(input, "optsPrevalence"),
-        cost_unit = as.numeric(input$optsCostUnit),
-        cost_pool = as.numeric(input$optsCostPool),
-        cost_period = as.numeric(input$optsCostPeriod),
+        cost_unit = costs$unit,
+        cost_pool = cost$pool,
+        cost_period = costs$period,
         cost_cluster = cc,
         correlation = rho,
         sensitivity = processOther(input, "optsSensitivity"),
