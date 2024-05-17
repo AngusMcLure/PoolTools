@@ -280,29 +280,10 @@ server <- function(input, output, session) {
 
   ## DESIGN -------------------------------------------------------------------
 
-  ### Val storage ----
-  design_opts <- reactiveValues(
-    # Design metrics
-    prev = 0.005,
-    rho = 0.1,
-    # Advanced settings
-    sens = 1,
-    spec = 1,
-    max_period = 10,
-    max_s = 50,
-    max_N = 20
-  )
-
   survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
       is_filled(input$optsTrapping)
-  })
-
-  randPrev_exists <- reactive({
-    is_filled(input$optsPoolStrat) &&
-      is_filled(input$optsCatchMean) &&
-      is_filled(input$optsCatchVar)
   })
 
   analysis_type <- reactive({
@@ -317,13 +298,8 @@ server <- function(input, output, session) {
     }
   })
 
-  randPrev_valid <- reactive({
-    req(randPrev_exists())
-    input$optsCatchMean > 0 && input$optsCatchVar && input$optsCatchVar > input$optsCatchMean
-  })
-
-  ### UIs ----
-  #### RandPrev UI ----
+  ### RandPrev ----
+  #### UI ----
   output$uiRandPrev <- renderUI({
     req(analysis_type() == "optimise_random_prevalence")
     tagList(
@@ -342,7 +318,26 @@ server <- function(input, output, session) {
     )
   })
 
+  #### Server ----
+  random_prev <- reactiveValues(
+    pool_strat = "",
+    catch_mean = NA,
+    catch_var = NA
+  )
 
+  observeEvent(input$optsPoolStrat, {
+    design_opts$pool_strat <- input$optsPoolStrat
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$CatchMean, {
+    random_prev$catch_mean <- as.numeric(input$optsCatchMean)
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$optsCatchVar, {
+    design_opts$catch_var <- as.numeric(input$optsCatchVar)
+  }, ignoreNULL = TRUE)
+
+  #### Validation UI ----
   output$validCatch <- renderText({
     req(randPrev_exists())
     # Validate RandPrevUI
@@ -353,8 +348,21 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Costs ----
-  ##### UI ----
+  #### Validation Server ----
+  randPrev_exists <- reactive({
+    is_filled(input$optsPoolStrat) &&
+      is_filled(input$optsCatchMean) &&
+      is_filled(input$optsCatchVar)
+  })
+
+  randPrev_valid <- reactive({
+    req(randPrev_exists())
+    input$optsCatchMean > 0 && input$optsCatchVar && input$optsCatchVar > input$optsCatchMean
+  })
+
+
+  ### Costs ----
+  #### UI ----
   output$uiCost <- renderUI({
     req(analysis_type())
     # Because rand prev has some additional options first
@@ -387,8 +395,7 @@ server <- function(input, output, session) {
     )
   })
 
-  ##### Server ----
-  ###### Values ----
+  #### Server ----
   # Reactive object to store values
   costs <- reactiveValues(
     unit = NA,
@@ -403,7 +410,7 @@ server <- function(input, output, session) {
   syncNumericInput("cluster", costs)
   syncNumericInput("period", costs)
 
-  ###### Validation UI ----
+  #### Validation UI ----
   output$validCost <- renderText({
     req(cost_exists())
     # Conditionally check each field is non-negative
@@ -431,7 +438,7 @@ server <- function(input, output, session) {
     )
   })
 
-  ###### Validation server ----
+  #### Validation server ----
   cost_exists <- reactive({
     required <- is_filled(costs$unit) && is_filled(costs$pool)
     clustered <- (!input$optsClustered || input$optsClustered && is_filled(costs$cluster))
@@ -456,8 +463,8 @@ server <- function(input, output, session) {
     total_cost <- costs$unit + costs$pool + cluster_cost + period_cost > 0
   })
 
-  #### Params UI ----
-  ##### UI ----
+  ### Params ----
+  #### UI ----
   output$uiParams <- renderUI({
     req(cost_valid())
     tagList(
@@ -500,7 +507,19 @@ server <- function(input, output, session) {
     )
   })
 
-  ##### Server ----
+  #### Server ----
+  design_opts <- reactiveValues(
+    # Design metrics
+    prev = 0.005,
+    rho = 0.1,
+    # Advanced settings
+    sens = 1,
+    spec = 1,
+    max_period = 10,
+    max_s = 50,
+    max_N = 20
+  )
+
   observeEvent(input$optsPrevalence, {
     design_opts$prev <- processOther(input, "optsPrevalence")
   }, ignoreNULL = TRUE)
@@ -509,8 +528,8 @@ server <- function(input, output, session) {
     design_opts$rho <- processOther(input, "optsCorrelation")
   }, ignoreNULL = TRUE)
 
-  #### Advanced settings ----
-  ##### Server ----
+  ### Advanced settings ----
+  #### Server ----
   observeEvent(input$optsSensitivity, {
     # processOther divides by 100
       design_opts$sens <- processOther(input, "optsSensitivity")
@@ -533,7 +552,7 @@ server <- function(input, output, session) {
     design_opts$max_N <- as.numeric(input$optsMaxN)
   }, ignoreNULL = TRUE)
 
-  ##### UI ----
+  #### UI ----
   output$uiDesignAdv <- renderUI({
     req(cost_valid())
     tagList(
@@ -584,7 +603,7 @@ server <- function(input, output, session) {
         ),
 
 
-        ###### optimise_sN_prevalence ----
+        ##### optimise_sN_prevalence ----
         if (analysis_type() == "optimise_sN_prevalence") {
           tagList(
             numericInput("optsMaxS", "Max units per pool", value = isolate(design_opts$max_s), min = 1, step = 1),
@@ -653,7 +672,7 @@ server <- function(input, output, session) {
     actionButton("runDesign", "Run!")
   })
 
-  #### Design output generation ----
+  ### Design output generation ----
   result_sN <- reactiveVal()
   result_randPrev <- reactiveVal()
   design_result <- reactiveVal()
@@ -698,7 +717,7 @@ server <- function(input, output, session) {
         pool_strat_family = get(input$optsPoolStrat),
         prevalence = processOther(input, "optsPrevalence"),
         cost_unit = costs$unit,
-        cost_pool = cost$pool,
+        cost_pool = costs$pool,
         cost_period = costs$period,
         cost_cluster = cc,
         correlation = rho,
