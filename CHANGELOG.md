@@ -8,9 +8,15 @@ and this project adheres to
 
 ## [0.1.4] - Unreleased  
 
+### Added  
+- Separate `reactiveValues()` objects to store UI values to prevent values
+resetting when UI does.  
+
 ### Changed
 - Design inputs do not reset when upstream settings are changed for:
     - Fixed sample size  
+	- Fixed sampling period  
+- Design back-end overhaul; UI and values are decoupled.  
 
 ## [0.1.3] - 2024-05-10  
 

@@ -6,24 +6,26 @@
 #' a consistent state in a dynamic UI (i.e. values do not reset when UI is
 #' hidden or removed).
 #'
-#' `syncNumericInput()` updates the relevant object in `r_store` whenever a
+#' `saveNumericInput()` updates the relevant object in `r_store` whenever a
 #' `boundNumericInput()` receives a new value.
 #'
 #' @param id
-#' @param r_store `reactiveValues()` object that stores costs.
-boundNumericInput <- function(id, label, r_store) {
+#' @param label chr UI label
+#' @param r_store `reactiveValues()` object that stores the value.
+boundNumericInput <- function(r_store, id, label, ...) {
+  # Default values are for costs
   ns <- NS(id)
   numericInput(
     ns("value"),
     label,
     # Ensures that the r_store and UI don't get updated infinitely
     value = isolate(r_store[[id]]),
-    min = 1e-6,
-    step = 0.5
+    ...
   )
 }
 
-syncNumericInput <- function(id, r_store) {
+saveNumericInput <- function(id, r_store) {
+  # TODO: switch args positions to be consistent with UI
   moduleServer(id, function(input, output, session) {
     observeEvent(input$value, {
       r_store[[id]] <- as.numeric(input$value)

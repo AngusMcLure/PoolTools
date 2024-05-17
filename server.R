@@ -383,13 +383,13 @@ server <- function(input, output, session) {
       tags$span("Enter the cost for each individual input. Use '.' for decimals (e.g. 10.5)."),
       tags$br(),
       tags$br(),
-      boundNumericInput("unit", "Cost per unit", costs),
-      boundNumericInput("pool", "Cost per pool", costs),
+      boundNumericInput(costs, "unit", "Cost per unit", min = 1e-6, step = 1),
+      boundNumericInput(costs, "pool", "Cost per pool", min = 1e-6, step = 1),
       if (input$optsClustered) {
-        boundNumericInput("cluster", "Cost per cluster", costs)
+        boundNumericInput(costs, "cluster", "Cost per cluster", min = 1e-6, step = 1)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        boundNumericInput("period", "Cost per period", costs)
+        boundNumericInput(costs, "period", "Cost per period", min = 1e-6, step = 1)
       },
       textOutput("validCost")
     )
@@ -405,10 +405,10 @@ server <- function(input, output, session) {
   )
 
   # Update values
-  syncNumericInput("unit", costs)
-  syncNumericInput("pool", costs)
-  syncNumericInput("cluster", costs)
-  syncNumericInput("period", costs)
+  saveNumericInput("unit", costs)
+  saveNumericInput("pool", costs)
+  saveNumericInput("cluster", costs)
+  saveNumericInput("period", costs)
 
   #### Validation UI ----
   output$validCost <- renderText({
@@ -508,6 +508,7 @@ server <- function(input, output, session) {
   })
 
   #### Server ----
+  # For variables that are shared between sN and random
   design_opts <- reactiveValues(
     # Design metrics
     prev = 0.005,
@@ -617,28 +618,28 @@ server <- function(input, output, session) {
     ) # End of tagList()
   }) # End Adv settings
 
-  other_valid <- reactive({
-    # Waits for advanced settings to populate before checking
-    # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
-    req(cost_valid())
-    valid <- TRUE
+  #### Server ----
+  # Values shared between sN an random are under design_opts
+  sN_opts <- reactiveValues(
+    max_s = 50,
+    max_N = 20
+  )
 
-    # TODO: Refactor this mess
-    if (is_filled(input$optsPrevalence) && input$optsPrevalence == "other") {
-      if (is_filled(input$optsPrevalenceOther) && !in_range(input, "optsPrevalence", c(0, 50), inc_lower = F) || !is_filled(input$optsPrevalenceOther)) valid <- FALSE
-    }
-    if (is_filled(input$optsSensitivity) && input$optsSensitivity == "other") {
-      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSensitivity", c(50, 100), inc_lower = T) || !is_filled(input$optsSensitivityOther)) valid <- FALSE
-    }
-    if (is_filled(input$optsSpecificity) && input$optsSpecificity == "other") {
-      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSpecificity", c(50, 100), inc_lower = T || !is_filled(input$optsSpecificityOther))) valid <- FALSE
-    }
-    if (is_filled(input$optsClustered) && input$optsClustered && is_filled(input$optsCorrelation) && input$optsCorrelation == "other") {
-      if (is_filled(input$optsCorrelationOther) && !in_range(input, "optsCorrelation", c(0, 50), inc_lower = T) || !is_filled(input$optsCorrelationOther)) valid <- FALSE
-    }
-    return(valid)
-  })
+  observeEvent(input$optsSensitivity, {
+    # processOther divides by 100
+      design_opts$sens <- processOther(input, "optsSensitivity")
+  }, ignoreNULL = TRUE)
 
+  observeEvent(input$optsSpecificity, {
+    # processOther divides by 100
+    design_opts$spec <- processOther(input, "optsSpecificity")
+  }, ignoreNULL = TRUE)
+
+  saveNumericInput("max_period", random_opts)
+  saveNumericInput("max_s", sN_opts)
+  saveNumericInput("max_N", sN_opts)
+
+  #### Validation UI ----
   output$uiValidOther <- renderText({
     # Waits for advanced settings to populate before checking
     # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
@@ -667,6 +668,30 @@ server <- function(input, output, session) {
     }
   })
 
+  #### Validation server ----
+  other_valid <- reactive({
+    # Waits for advanced settings to populate before checking
+    # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
+    req(cost_valid())
+    valid <- TRUE
+
+    # TODO: Refactor this mess
+    if (is_filled(input$optsPrevalence) && input$optsPrevalence == "other") {
+      if (is_filled(input$optsPrevalenceOther) && !in_range(input, "optsPrevalence", c(0, 50), inc_lower = F) || !is_filled(input$optsPrevalenceOther)) valid <- FALSE
+    }
+    if (is_filled(input$optsSensitivity) && input$optsSensitivity == "other") {
+      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSensitivity", c(50, 100), inc_lower = T) || !is_filled(input$optsSensitivityOther)) valid <- FALSE
+    }
+    if (is_filled(input$optsSpecificity) && input$optsSpecificity == "other") {
+      if (is_filled(input$optsSensitivityOther) && !in_range(input, "optsSpecificity", c(50, 100), inc_lower = T || !is_filled(input$optsSpecificityOther))) valid <- FALSE
+    }
+    if (is_filled(input$optsClustered) && input$optsClustered && is_filled(input$optsCorrelation) && input$optsCorrelation == "other") {
+      if (is_filled(input$optsCorrelationOther) && !in_range(input, "optsCorrelation", c(0, 50), inc_lower = T) || !is_filled(input$optsCorrelationOther)) valid <- FALSE
+    }
+    return(valid)
+  })
+
+  ### Button ----
   output$btnDesign <- renderUI({
     req(cost_valid(), !is.null(other_valid()) && other_valid())
     actionButton("runDesign", "Run!")
