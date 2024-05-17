@@ -22,6 +22,7 @@ library(shinybusy)
 
 source("R/fct_dt_display.R")
 source("R/fct_pooltestr.R")
+source("R/mod_design_cost.R")
 source("R/ui_other.R")
 source("R/ui_tooltips.R")
 source("R/utils_design_text.R")

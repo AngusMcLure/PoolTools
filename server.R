@@ -293,24 +293,10 @@ server <- function(input, output, session) {
     max_N = 20
   )
 
-  costs <- reactiveValues(
-    unit = NULL,
-    pool = NULL,
-    cluster = NULL,
-    period = NULL
-  )
-
   survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
       is_filled(input$optsTrapping)
-  })
-
-  cost_exists <- reactive({
-    required <- is_filled(input$optsCostUnit) && is_filled(input$optsCostPool)
-    clustered <- (!input$optsClustered || input$optsClustered && is_filled(input$optsCostCluster))
-    periodic <- (analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && is_filled(input$optsCostPeriod)))
-    required && clustered && periodic
   })
 
   randPrev_exists <- reactive({
@@ -334,19 +320,6 @@ server <- function(input, output, session) {
   randPrev_valid <- reactive({
     req(randPrev_exists())
     input$optsCatchMean > 0 && input$optsCatchVar && input$optsCatchVar > input$optsCatchMean
-  })
-
-  cost_valid <- reactive({
-    req(cost_exists())
-    # Conditionally check that individual costs are non-negative
-    required <- input$optsCostUnit >= 0 && input$optsCostPool >= 0
-    clustered <- !input$optsClustered || (input$optsClustered && input$optsCostCluster >= 0)
-    periodic <- analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && input$optsCostPeriod >= 0)
-    # Check the conditional total cost is > $0
-    cluster_cost <- ifelse(input$optsClustered, input$optsCostCluster, 0)
-    period_cost <- ifelse(analysis_type() == "optimise_random_prevalence", input$optsCostPeriod, 0)
-
-    total_cost <- input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0
   })
 
   ### UIs ----
@@ -402,38 +375,35 @@ server <- function(input, output, session) {
       tags$span("Enter the cost for each individual input. Use '.' for decimals (e.g. 10.5)."),
       tags$br(),
       tags$br(),
-      # TODO: Each of these can be modularised
-      numericInput("optsCostUnit", "Unit", value = isolate(costs$unit), min = 1e-6, step = 0.5),
-      numericInput("optsCostPool", "Pool", value = isolate(costs$pool), min = 1e-6, step = 0.5),
+      cost_ui("unit", costs),
+      cost_ui("pool", costs),
       if (input$optsClustered) {
-        numericInput("optsCostCluster", "Cluster", value = isolate(costs$cluster), min = 1e-6, step = 0.5)
+        cost_ui("cluster", costs)
       },
       if (analysis_type() == "optimise_random_prevalence") {
-        numericInput("optsCostPeriod", "Collection period", value = isolate(costs$period), min = 1e-6, step = 0.5)
+        cost_ui("period", costs)
       },
       textOutput("validCost")
     )
   })
 
   ##### Server ----
-  # Update the reactive values
-  observeEvent(input$optsCostUnit, {
-    costs$unit <- input$optsCostUnit
-  }, ignoreNULL = TRUE)
+  ###### Values ----
+  # Reactive object to store values
+  costs <- reactiveValues(
+    unit = NA,
+    pool = NA,
+    cluster = NA,
+    period = NA
+  )
 
-  observeEvent(input$optsCostPool, {
-    costs$pool <- input$optsCostPool
-  }, ignoreNULL = TRUE)
+  # Update values
+  cost_server("unit", costs)
+  cost_server("pool", costs)
+  cost_server("cluster", costs)
+  cost_server("period", costs)
 
-  observeEvent(input$optsCostCluster, {
-    costs$cluster <- input$optsCostCluster
-  }, ignoreNULL = TRUE)
-
-  observeEvent(input$optsCostPeriod, {
-    costs$period <- input$optsCostPeriod
-  }, ignoreNULL = TRUE)
-
-  # Input validation
+  ###### Validation UI ----
   output$validCost <- renderText({
     req(cost_exists())
     # Conditionally check each field is non-negative
@@ -453,6 +423,27 @@ server <- function(input, output, session) {
         "At least one of the costs must be > $0"
       )
     )
+  })
+
+  ###### Validation server ----
+  cost_exists <- reactive({
+    required <- is_filled(input$optsCostUnit) && is_filled(input$optsCostPool)
+    clustered <- (!input$optsClustered || input$optsClustered && is_filled(input$optsCostCluster))
+    periodic <- (analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && is_filled(input$optsCostPeriod)))
+    required && clustered && periodic
+  })
+
+  cost_valid <- reactive({
+    req(cost_exists())
+    # Conditionally check that individual costs are non-negative
+    required <- input$optsCostUnit >= 0 && input$optsCostPool >= 0
+    clustered <- !input$optsClustered || (input$optsClustered && input$optsCostCluster >= 0)
+    periodic <- analysis_type() != "optimise_random_prevalence" || (analysis_type() == "optimise_random_prevalence" && input$optsCostPeriod >= 0)
+    # Check the conditional total cost is > $0
+    cluster_cost <- ifelse(input$optsClustered, input$optsCostCluster, 0)
+    period_cost <- ifelse(analysis_type() == "optimise_random_prevalence", input$optsCostPeriod, 0)
+
+    total_cost <- input$optsCostUnit + input$optsCostPool + cluster_cost + period_cost > 0
   })
 
   #### Params UI ----
