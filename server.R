@@ -126,7 +126,7 @@ server <- function(input, output, session) {
     req(stratify_valid())
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInputTT("optsHierarchy", "Adjust for hierarchical sampling?",
+      checkboxInputTT("optsHierarchy", "Cluster/hierarchical sampling?",
         tooltip = "Apply a hierarchical model to minimise overestimating confidence/credible intervals", value = FALSE
       )
     )

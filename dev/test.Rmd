@@ -299,6 +299,18 @@ is_integer_col(simple, "NumInPool")
 is.numeric(simple[["NumInPool"]])
 ```
 
+### Power calculations
+
+4 functions:  
+- `power_pool()`  
+- `sample_size_pool()`  
+- `power_pool_random()`   
+- `sample_size_pool_random()`  
+
+```{r}
+PoolPoweR::power_pool
+```
+
 
 
 

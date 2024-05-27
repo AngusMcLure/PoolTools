@@ -4,6 +4,7 @@ ui <- fluidPage(
   ## Main navbar and pages
   navbarPage(paste0("PoolTools v", appVersion),
     id = "main_nav",
+    ## Home ----
     tabPanel(
       "Home",
       fluidRow(
@@ -27,10 +28,12 @@ ui <- fluidPage(
         )
       )
     ),
+    ## About ----
     tabPanel(
       "About",
       includeMarkdown("inst/app/www/about.md")
     ),
+    ## Analyse ----
     tabPanel(
       "Analyse",
       h2("Analyse pooled data"),
@@ -75,6 +78,7 @@ ui <- fluidPage(
         )
       )
     ),
+    ## Design ----
     tabPanel(
       "Design",
       h2("Design a pooled survey"),
@@ -83,7 +87,7 @@ ui <- fluidPage(
         sidebarPanel(
           style = "max-height: 75vh; overflow-y: auto;",
 
-          # Survey options ------------------------------------
+          ### Survey options ----
           selectInputTT(
             "optsMode",
             "Analysis mode",
@@ -109,12 +113,12 @@ ui <- fluidPage(
           ),
           checkboxInputTT(
             "optsClustered",
-            "Clustered design?",
+            "Cluster/hierarchical sampling?",
             tooltip = "tooltip",
             value = TRUE
           ),
 
-          # Main settings -------------------------------------
+          ### Main settings ----
           # UI are conditional based on survey options
           uiOutput("uiRandPrev"),
           uiOutput("uiCost"),
@@ -122,7 +126,7 @@ ui <- fluidPage(
           uiOutput("uiDesignAdv"),
           textOutput("uiValidOther"),
           uiOutput("btnDesign")
-        ), # End of sidebarPanel ------------------------------
+        ), ### End of sidebarPanel ----
 
         mainPanel(
           tabsetPanel(
@@ -138,7 +142,7 @@ ui <- fluidPage(
             )
           )
         )
-      ) # End of sidebarLayout -------------------------------
+      ) ### End of sidebarLayout ----
     )
   )
 )
