@@ -143,6 +143,11 @@ ui <- fluidPage(
           )
         )
       ) ### End of sidebarLayout ----
+    ),
+    ### Temp power calcs ----
+    tabPanel(
+      "WIP",
+      power_pool_ui("power_pool")
     )
   )
 )

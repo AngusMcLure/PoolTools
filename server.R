@@ -792,4 +792,7 @@ server <- function(input, output, session) {
     req(design_result())
     design_result()
   })
+
+  ## POWER/SIZE ----
+  power_pool_server("power_pool")
 } # End server()
