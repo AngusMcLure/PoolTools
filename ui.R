@@ -95,7 +95,8 @@ ui <- fluidPage(
             choices = c(
               "Select" = "",
               "Identify cost-effective designs",
-              "Calculate power of existing designs (Coming soon...)"
+              "Evaluate the power of existing designs (WIP)",
+              "Calculate the required sample size (WIP)"
             )
           ),
           # TODO: Split Mode and the remaining below to Submode

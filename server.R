@@ -718,15 +718,21 @@ server <- function(input, output, session) {
     # End parse input arguments
 
     #### optimise_sN_prevalence ----
+    # TODO: Once PoolPoweR::optimise_prevalence is implemented for
+    # variable design, the `if` logic can be refactored on
+    # input$optsTrapping instead, and same optimise_prevalence function reused!
     if (analysis_type() == "optimise_sN_prevalence") {
-      out <- PoolPoweR::optimise_sN_prevalence(
+      fd <- PoolPoweR::fixed_design(
+        sensitivity = design_opts$sens,
+        specificity = design_opts$spec
+      )
+      out <- PoolPoweR::optimise_prevalence(
+        fd,
         prevalence = design_opts$prev,
         cost_unit = costs$unit,
         cost_pool = costs$pool,
         cost_cluster = cc,
         correlation = rho,
-        sensitivity = design_opts$sens,
-        specificity = design_opts$spec,
         max_s = design_opts$max_s,
         max_N = design_opts$max_N,
         form = "logitnorm"
@@ -795,4 +801,5 @@ server <- function(input, output, session) {
 
   ## POWER/SIZE ----
   power_pool_server("power_pool")
+
 } # End server()

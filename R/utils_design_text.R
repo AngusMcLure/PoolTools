@@ -7,17 +7,26 @@ pluralise <- function(obj, text) {
 }
 
 sn_text <- function(snprev_output, clustered) {
+  # TODO: This logic could be refactored as a pretty print method for
+  # PoolPoweR::sample_design(). Need to first implement num_clusters, where
+  # if number_clusters > 1, design is clustered.
+  print(snprev_output)
   r <- snprev_output
+  # Unpacking variables here make it compatible for old and new implementations
+  pool_size <- r$s
+  pool_number <- r$N
+  total_units <- r$catch
+
   pre_txt <- "For the given inputs, the optimal design is to sample "
-  p_units <- pluralise(r$s, "unit")
+  p_units <- pluralise(r$pool_size, "unit")
 
   if (clustered) {
     paste0(
-      pre_txt, r$catch, " units per collection site, across ",
-      r$N, " pools with ", r$s, " ", p_units, " each pool."
+      pre_txt, r$total_units, " units per collection site, across ",
+      r$pool_number, " pools with ", r$pool_size, " ", p_units, " each pool."
     )
   } else if (!clustered) {
-    paste0(pre_txt, r$s, " ", p_units, " per pool.")
+    paste0(pre_txt, r$pool_size, " ", p_units, " per pool.")
   }
 }
 

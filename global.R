@@ -6,8 +6,8 @@
 # install.packages("PoolTestR")
 
 # Install PoolPoweR: github dev version
-# devtools::install_github("AngusMcLure/PoolPoweR")
-appVersion <- "0.1.3"
+# devtools::install_github("AngusMcLure/PoolPoweR@refactor")
+appVersion <- "0.1.4"
 
 library(shiny)
 library(shinyBS)
