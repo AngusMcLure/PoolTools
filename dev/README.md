@@ -2,7 +2,7 @@
 
 ## Pre-push  
 
-Linting:  
+Optional linting:  
 ```r
 styler::style_dir(".")  
 ``` 

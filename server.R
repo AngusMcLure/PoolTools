@@ -1,7 +1,5 @@
 server <- function(input, output, session) {
-  ##
-  ## Home page buttons
-  ##
+  # Home page buttons ----
   observeEvent(input$btnAnalysePage, {
     updateTabsetPanel(session, "main_nav", selected = "Analyse")
   })
@@ -10,7 +8,7 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, "main_nav", selected = "Design")
   })
 
-  ## ANALYSE ------------------------------------------------------------------
+  # ANALYSE ----
   data <- reactive({
     req(input$fileAnalyse)
 
@@ -211,7 +209,8 @@ server <- function(input, output, session) {
     )
   })
 
-  # JS version for conditionalPanel - this is to ensure that
+  # JS version for conditionalPanel - this is to ensure that downstream
+  # information and components do not reset each time a new version does not
   output$hierarchyValid <- reactive({
     hierarchy_valid()
   })
@@ -225,7 +224,6 @@ server <- function(input, output, session) {
   })
 
   pooltestr_out <- eventReactive(input$optsAnalyse, {
-    # TODO: Fix eventReactive so table doesn't disappear when button does
     shinybusy::show_modal_spinner(text = "Analysing...")
     req_args <- list(
       data = data(),
@@ -233,7 +231,6 @@ server <- function(input, output, session) {
       poolSize = input$colUnitNumber
     )
 
-    # Determine which PTR mode to run from UI settings
     ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
 
     # TODO: Refactor so it uses `ptr_mode`
@@ -278,14 +275,24 @@ server <- function(input, output, session) {
     }
   )
 
-  ## DESIGN -------------------------------------------------------------------
+  # DESIGN ----
 
+  # There are several reactive objects purely to check whether inputs have been
+  # supplied or not. These are used to reveal the next UI components.
+  # This one tracks whether the following three inputs are supplied
+  # (Analysis mode, survey objective, collection strategy)
   survey_exists <- reactive({
     is_filled(input$optsObjective) &&
       is_filled(input$optsMode) &&
       is_filled(input$optsTrapping)
   })
 
+  # Based on the combination of the previous inputs, an analysis_type is
+  # returned. This is to determine which PoolPoweR function/settings should be
+  # run, and to display the correct UI parts for it.
+  #
+  # With the PoolPoweR refactoring of sample_design, the logic needed to assign
+  # the correct functions could be simplified throughout.
   analysis_type <- reactive({
     req(survey_exists())
     if (input$optsObjective == "Estimate prevalence" &
@@ -298,8 +305,13 @@ server <- function(input, output, session) {
     }
   })
 
-  ### RandPrev ----
-  #### UI ----
+  ## RandPrev ----
+  # RandPrev uses PoolPoweR::optimise_random_prevalence(), requiring UI inputs
+  # for pooling strategy, catch mean and catch variance.
+
+  ### UI ----
+  # A lot of UI components are displayed within server components because they
+  # require conditional logic (to be displayed).
   output$uiRandPrev <- renderUI({
     req(analysis_type() == "optimise_random_prevalence")
     tagList(
@@ -318,13 +330,19 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Server ----
+  ### Server ----
+  # These reactiveValues-observeEvent pairs are responsible for storing and
+  # updating data when changed in the UI. The goal is to decouple the values
+  # from the UI. Previously (and still a lot of parts of the code), depend on
+  # changes or values direct from the UI, which made the app very unstable.
   random_prev <- reactiveValues(
     pool_strat = "",
     catch_mean = NA,
     catch_var = NA
   )
 
+  # observeEvent to update the correpsonding reactiveValues when changed in the
+  # UI.
   observeEvent(input$optsPoolStrat, {
     design_opts$pool_strat <- input$optsPoolStrat
   }, ignoreNULL = TRUE)
@@ -337,7 +355,7 @@ server <- function(input, output, session) {
     design_opts$catch_var <- as.numeric(input$optsCatchVar)
   }, ignoreNULL = TRUE)
 
-  #### Validation UI ----
+  ### Validation UI ----
   output$validCatch <- renderText({
     req(randPrev_exists())
     # Validate RandPrevUI
@@ -348,7 +366,9 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Validation Server ----
+  ### Validation Server ----
+  # Completeness and correctness checks to tell downstream components (i.e.
+  # costs UI and Server) to display.
   randPrev_exists <- reactive({
     is_filled(input$optsPoolStrat) &&
       is_filled(input$optsCatchMean) &&
@@ -361,8 +381,11 @@ server <- function(input, output, session) {
   })
 
 
-  ### Costs ----
-  #### UI ----
+  ## Costs ----
+  # UI/Server component for cost_unit, cost_pool, cost_cluster; cost_period if
+  # randPrev. Requires an analysis_type() and if randPrev, all inputs are valid
+
+  ### UI ----
   output$uiCost <- renderUI({
     req(analysis_type())
     # Because rand prev has some additional options first
@@ -383,8 +406,10 @@ server <- function(input, output, session) {
       tags$span("Enter the cost for each individual input. Use '.' for decimals (e.g. 10.5)."),
       tags$br(),
       tags$br(),
+      # Custom module for handling data input and storage. See docs.
       boundNumericInput(costs, "unit", "Cost per unit", min = 1e-6, step = 1),
       boundNumericInput(costs, "pool", "Cost per pool", min = 1e-6, step = 1),
+      # Conditional parameters to show if clustered or randPrev
       if (input$optsClustered) {
         boundNumericInput(costs, "cluster", "Cost per cluster", min = 1e-6, step = 1)
       },
@@ -395,7 +420,7 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Server ----
+  ### Server ----
   # Reactive object to store values
   costs <- reactiveValues(
     unit = NA,
@@ -404,13 +429,13 @@ server <- function(input, output, session) {
     period = NA
   )
 
-  # Update values
+  # Update values received from boundNumericInput(costs, ...)
   saveNumericInput("unit", costs)
   saveNumericInput("pool", costs)
   saveNumericInput("cluster", costs)
   saveNumericInput("period", costs)
 
-  #### Validation UI ----
+  ### Validation UI ----
   output$validCost <- renderText({
     req(cost_exists())
     # Conditionally check each field is non-negative
@@ -438,7 +463,9 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Validation server ----
+  ### Validation server ----
+  # Conditionally check all three cost variations are filled, If so, check that
+  # inputs are valid.
   cost_exists <- reactive({
     required <- is_filled(costs$unit) && is_filled(costs$pool)
     clustered <- (!input$optsClustered || input$optsClustered && is_filled(costs$cluster))
@@ -463,8 +490,11 @@ server <- function(input, output, session) {
     total_cost <- costs$unit + costs$pool + cluster_cost + period_cost > 0
   })
 
-  ### Params ----
-  #### UI ----
+  ## Params ----
+  # For parameters prevalence and correlation. Dropdown selections with sensible
+  # default, but an option to input own values manually.
+
+  ### UI ----
   output$uiParams <- renderUI({
     req(cost_valid())
     tagList(
@@ -480,6 +510,9 @@ server <- function(input, output, session) {
           "High (2%)" = 0.02,
           "Other %" = "other"
         ),
+        # This allows the UI to be initialised with a default value from the
+        # reactive data storage object. The use of isolate ensures that you
+        # don't get stuck in an infinite loop.
         selected = isolate(design_opts$prev)
       ),
       conditionalPanel(
@@ -507,8 +540,9 @@ server <- function(input, output, session) {
     )
   })
 
-  #### Server ----
-  # For variables that are shared between sN and random
+  ### Server ----
+  # For variables that are shared between sN and random.
+  # These are default values which will populate the UI on session start.
   design_opts <- reactiveValues(
     # Design metrics
     prev = 0.005,
@@ -521,6 +555,7 @@ server <- function(input, output, session) {
     max_N = 20
   )
 
+  # Corresponding data updaters for design_opts() storage
   observeEvent(input$optsPrevalence, {
     design_opts$prev <- processOther(input, "optsPrevalence")
   }, ignoreNULL = TRUE)
@@ -529,8 +564,12 @@ server <- function(input, output, session) {
     design_opts$rho <- processOther(input, "optsCorrelation")
   }, ignoreNULL = TRUE)
 
-  ### Advanced settings ----
-  #### Server ----
+  ## Advanced settings ----
+  # Contains additional parameters hidden by default
+  # e.g. sensitivity, specificity, and several ones related to how many times
+  # things should be sampled by PoolPoweR functions.
+
+  ### Server ----
   observeEvent(input$optsSensitivity, {
     # processOther divides by 100
       design_opts$sens <- processOther(input, "optsSensitivity")
@@ -553,7 +592,7 @@ server <- function(input, output, session) {
     design_opts$max_N <- as.numeric(input$optsMaxN)
   }, ignoreNULL = TRUE)
 
-  #### UI ----
+  ### UI ----
   output$uiDesignAdv <- renderUI({
     req(cost_valid())
     tagList(
@@ -604,7 +643,7 @@ server <- function(input, output, session) {
         ),
 
 
-        ##### optimise_sN_prevalence ----
+        #### optimise_sN_prevalence ----
         if (analysis_type() == "optimise_sN_prevalence") {
           tagList(
             numericInput("optsMaxS", "Max units per pool", value = isolate(design_opts$max_s), min = 1, step = 1),
@@ -618,7 +657,7 @@ server <- function(input, output, session) {
     ) # End of tagList()
   }) # End Adv settings
 
-  #### Server ----
+  ### Server ----
   # Values shared between sN an random are under design_opts
   sN_opts <- reactiveValues(
     max_s = 50,
@@ -639,7 +678,7 @@ server <- function(input, output, session) {
   saveNumericInput("max_s", sN_opts)
   saveNumericInput("max_N", sN_opts)
 
-  #### Validation UI ----
+  ### Validation UI ----
   output$uiValidOther <- renderText({
     # Waits for advanced settings to populate before checking
     # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
@@ -668,7 +707,7 @@ server <- function(input, output, session) {
     }
   })
 
-  #### Validation server ----
+  ### Validation server ----
   other_valid <- reactive({
     # Waits for advanced settings to populate before checking
     # req(!is.null(input$optsSensitivity) && !is.null(input$optsSpecificity))
@@ -703,9 +742,10 @@ server <- function(input, output, session) {
   design_result <- reactiveVal()
 
   observeEvent(input$runDesign, {
+    # These actions are run when the button is pressed
     req(cost_valid(), other_valid())
     shinybusy::show_modal_spinner(text = "Designing...")
-    ##### Parse input arguments ----
+    ### Parse input arguments ----
     if (input$optsClustered) {
       # replace with switch
       req(is_filled(input$optsClustered))
@@ -718,6 +758,9 @@ server <- function(input, output, session) {
     # End parse input arguments
 
     #### optimise_sN_prevalence ----
+    # TODO: Once PoolPoweR::optimise_prevalence is implemented for
+    # variable design, the `if` logic can be refactored on
+    # input$optsTrapping instead, and same optimise_prevalence function reused!
     if (analysis_type() == "optimise_sN_prevalence") {
       out <- PoolPoweR::optimise_sN_prevalence(
         prevalence = design_opts$prev,

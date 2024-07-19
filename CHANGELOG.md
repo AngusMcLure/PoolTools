@@ -6,17 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
-## [0.1.4] - Unreleased  
+## [0.1.4] - 2024-07-19
 
 ### Added  
 - Separate `reactiveValues()` objects to store UI values to prevent values
 resetting when UI does.  
+- `dev` branch to store all WIP i.e. PoolPoweR power and sample_size functions.  
 
 ### Changed
 - Design inputs do not reset when upstream settings are changed for:
     - Fixed sample size  
 	- Fixed sampling period  
 - Design back-end overhaul; UI and values are decoupled.  
+- Renaming cluster/hierarchical sampling in UI.  
 
 ## [0.1.3] - 2024-05-10  
 
