@@ -1,0 +1,114 @@
+diff --git a/server.R b/server.R
+index b6e6e7d..fd67b96 100644
+--- a/server.R
++++ b/server.R
+@@ -312,30 +312,26 @@ server <- function(input, output, session) {
+           "Target number" = "pool_target_number"
+         )
+       ),
+-      numericInput("optsCatchMean", "Catch mean", value = NULL, min = 1, step = 1),
+-      numericInput("optsCatchVar", "Catch variance", value = NULL, min = 2, step = 1),
++      boundNumericInput(random_opts, "catch_mean", "Catch mean", min = 1, step = 1),
++      boundNumericInput(random_opts, "catch_var", "Catch variance", min = 2, step = 1),
+       textOutput("validCatch")
+     )
+   })
+ 
+   #### Server ----
+-  random_prev <- reactiveValues(
++  random_opts <- reactiveValues(
+     pool_strat = "",
+     catch_mean = NA,
+-    catch_var = NA
++    catch_var = NA,
++    max_period = 10
+   )
+ 
+   observeEvent(input$optsPoolStrat, {
+-    design_opts$pool_strat <- input$optsPoolStrat
++    random_opts$pool_strat <- input$optsPoolStrat
+   }, ignoreNULL = TRUE)
+ 
+-  observeEvent(input$CatchMean, {
+-    random_prev$catch_mean <- as.numeric(input$optsCatchMean)
+-  }, ignoreNULL = TRUE)
+-
+-  observeEvent(input$optsCatchVar, {
+-    design_opts$catch_var <- as.numeric(input$optsCatchVar)
+-  }, ignoreNULL = TRUE)
++  saveNumericInput("catch_mean", random_opts)
++  saveNumericInput("catch_var", random_opts)
+ 
+   #### Validation UI ----
+   output$validCatch <- renderText({
+@@ -516,9 +512,6 @@ server <- function(input, output, session) {
+     # Advanced settings
+     sens = 1,
+     spec = 1,
+-    max_period = 10,
+-    max_s = 50,
+-    max_N = 20
+   )
+ 
+   observeEvent(input$optsPrevalence, {
+@@ -530,29 +523,6 @@ server <- function(input, output, session) {
+   }, ignoreNULL = TRUE)
+ 
+   ### Advanced settings ----
+-  #### Server ----
+-  observeEvent(input$optsSensitivity, {
+-    # processOther divides by 100
+-      design_opts$sens <- processOther(input, "optsSensitivity")
+-  }, ignoreNULL = TRUE)
+-
+-  observeEvent(input$optsSpecificity, {
+-    # processOther divides by 100
+-    design_opts$spec <- processOther(input, "optsSpecificity")
+-  }, ignoreNULL = TRUE)
+-
+-  observeEvent(input$optsMaxPeriod, {
+-    design_opts$max_period <- as.numeric(input$optsMaxPeriod)
+-  }, ignoreNULL = TRUE)
+-
+-  observeEvent(input$optsMaxS, {
+-    design_opts$max_s <- as.numeric(input$optsMaxS)
+-  }, ignoreNULL = TRUE)
+-
+-  observeEvent(input$optsMaxN, {
+-    design_opts$max_N <- as.numeric(input$optsMaxN)
+-  }, ignoreNULL = TRUE)
+-
+   #### UI ----
+   output$uiDesignAdv <- renderUI({
+     req(cost_valid())
+@@ -600,16 +570,16 @@ server <- function(input, output, session) {
+         ),
+         conditionalPanel(
+           condition = "input.optsTrapping == 'Fixed sampling period'",
+-          numericInput("optsMaxPeriod", "Max sampling period", value = isolate(design_opts$max_period), min = 1, step = 1)
++          boundNumericInput(random_opts, "max_period", "Max sampling period", min = 1, step = 1)
+         ),
+ 
+ 
+         ##### optimise_sN_prevalence ----
+         if (analysis_type() == "optimise_sN_prevalence") {
+           tagList(
+-            numericInput("optsMaxS", "Max units per pool", value = isolate(design_opts$max_s), min = 1, step = 1),
++            boundNumericInput(sN_opts, "max_s", "Max units per pool", min = 1, step = 1),
+             if (input$optsClustered) {
+-              numericInput("optsMaxN", "Max pools per cluster", value = isolate(design_opts$max_N), min = 1, step = 1)
++              boundNumericInput(sN_opts, "max_N", "Max pools per cluster", min = 1, step = 1)
+             }
+           )
+         }
+@@ -727,8 +697,8 @@ server <- function(input, output, session) {
+         correlation = rho,
+         sensitivity = design_opts$sens,
+         specificity = design_opts$spec,
+-        max_s = design_opts$max_s,
+-        max_N = design_opts$max_N,
++        max_s = sN_opts$max_s,
++        max_N = sN_opts$max_N,
+         form = "logitnorm"
+       )
+       result_sN(out)
