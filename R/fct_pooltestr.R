@@ -91,11 +91,22 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, st
     if (stratify) {
       hier_args <- c(hier_args, lapply(stratify_vars, as.name))
     }
-    # 5. HierPoolPrev (Unstrat.)
+    # # 5. HierPoolPrev (Unstrat.) without ICC
+    # data <-
+    #   do.call(PoolTestR::HierPoolPrev, hier_args) %>%
+    #   rename_bayes() %>%
+    #   rename_pools()
+
+    # 5. HierPoolPrev (Unstrat.) with ICC (no formatting applied)
     data <-
-      do.call(PoolTestR::HierPoolPrev, hier_args) %>%
-      rename_bayes() %>%
-      rename_pools()
+      do.call(PoolTestR::HierPoolPrev, hier_args)
+
+    # If ICC columns are present, update formatting
+    if ("ICC" %in% names(HierPP_op)){
+      data <- reformat_ICC_cols(data)
+    }
+    print(str(data))
+
   } else {
     return(NULL)
   }
