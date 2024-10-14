@@ -49,16 +49,20 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 #'
 #' TODO: Refactor so it uses ptr_mode as input
 #'
+#' `pooltestr_mode` is the output from \code{which_pooltestr}
+#'
 #' @param req_args
 #' @param stratify
 #' @param hierarchy
 #' @param hier_vars
 #' @param bayesian
 #' @param stratify_vars
+#' @param pooltestr_mode
 #'
 #' @return dataframe
 #' @name run_pooltestr
-run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, stratify_vars) {
+#' @seealso \code{\link{which_pooltestr}}
+run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, stratify_vars, pooltestr_mode) {
   if (!hierarchy) {
     # Add bayesian switch for PoolPrev
     poolprev_args <- req_args
@@ -105,7 +109,6 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, st
     if ("ICC" %in% names(HierPP_op)){
       data <- reformat_ICC_cols(data)
     }
-    print(str(data))
 
   } else {
     return(NULL)
