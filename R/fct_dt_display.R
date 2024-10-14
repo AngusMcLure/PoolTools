@@ -87,7 +87,7 @@ bayes_cols <- c(
 #' @param per_prev boolean Should values be displayed `per_val`?
 #' @param per_val integer Value to multiply prevalence and intervals by.
 #' @param digits integer Number of digits to round by.
-
+#'
 #' @return dataframe
 #' @name dt_display
 dt_display <- function(df, ptr_mode, per_val, digits) {
@@ -111,4 +111,42 @@ multiply_cols <- function(df, cols, val) {
     df,
     dplyr::across(cols, ~ as.numeric(.) * val)
   )
+}
+
+#' Display ICCs
+#'
+#' Helper for handling ICC matrix columns in `PoolTestR::HierPoolPrev` output. If ICC columns
+#' are not present, this function returns the input. If ICC columns are present,
+#' this function separates the ICC columns for each category into a separate matrix.
+#' See `run_pooltestr()` for details on the different PoolTestR modes.
+#'
+#' @param df dataframe Output of PoolTestR::HierPoolPrev()
+#'
+#' @return dataframe
+#' @name icc_display
+reformat_ICC_cols <- function(df) {
+  # Remove ICC columns
+  icc_names <- attr(df$ICC, "dimnames")[[2]]
+  trimmed_object <- df %>%
+    select(-contains("ICC", ignore.case = TRUE))
+  # Reformat matrix columns by clustering variables and reattach to df
+  icc_tbls <- lapply(icc_names, extract_matrix_column_ICC, df)
+  icc_output <- as.data.frame(bind_cols(trimmed_object, icc_tbls))
+  return(icc_output)
+}
+
+extract_matrix_column_ICC <- function(cluster_var, df){
+  all_cluster_vars <- attr(df$ICC, "dimnames")[[2]]
+  if (cluster_var %in% all_cluster_vars){
+    # Extract only the columns for this clustering variable
+    matrix_cols <- df %>%
+      select(grep("ICC", names(df), value = T))
+    cluster_cols <- as_tibble(lapply(names(matrix_cols),
+                                     function(x){matrix_cols[[x]][ , which(all_cluster_vars == cluster_var)]}),
+                              .name_repair = "minimal")
+    names(cluster_cols) <- paste0(cluster_var, " ", names(matrix_cols))
+    return(cluster_cols)
+  } else {
+    return(NULL)
+  }
 }
