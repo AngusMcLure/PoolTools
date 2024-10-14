@@ -230,9 +230,7 @@ server <- function(input, output, session) {
       result = input$colTestResults,
       poolSize = input$colUnitNumber
     )
-
     ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
-
     # TODO: Refactor so it uses `ptr_mode`
     out <- run_pooltestr(
       req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
@@ -242,27 +240,49 @@ server <- function(input, output, session) {
     list(df = out, mode = ptr_mode)
   })
 
-  formatted_out <- reactive({
-    # Format pooltestr table output i.e. round values, or display prevalence
-    # per value
+  # # Fred's code to output PoolTestR results - the reformatting here doesn't work now extra columns are added
+  # formatted_out <- reactive({
+  #   # Format pooltestr table output i.e. round values, or display prevalence
+  #   # per value
+  #   req(pooltestr_out())
+  #   dt_display(
+  #     df = pooltestr_out()$df,
+  #     ptr_mode = pooltestr_out()$mode,
+  #     per_val = as.integer(input$optsPerPrevVal),
+  #     digits = as.integer(input$optsRoundAnalyse)
+  #   )
+  # })
+  #
+  # output$outAnalyse <- renderDataTable({
+  #   req(formatted_out())
+  #   datatable(formatted_out(), rownames = F)
+  # })
+  # # End of Fred's code
+
+  ## Caitlin working here
+  ## Test - I can output raw PoolTestR dataframe with ICC columns!
+  ## TO DO:
+  # - keep class for PoolPrev/HierPoolPrev to inform output
+  # - keep output for PoolPrev as Fred designed
+  # - keep output for standard HierPoolPrev as Fred designed
+  # - update formatting for output for ICC HierPoolPrev
+  # - add dt_display function for all output types
+  raw_out <- reactive({
     req(pooltestr_out())
-    dt_display(
-      df = pooltestr_out()$df,
-      ptr_mode = pooltestr_out()$mode,
-      per_val = as.integer(input$optsPerPrevVal),
-      digits = as.integer(input$optsRoundAnalyse)
-    )
+    pooltestr_out()$df
   })
 
   output$outAnalyse <- renderDataTable({
-    req(formatted_out())
-    datatable(formatted_out(), rownames = F)
+    req(pooltestr_out())
+    datatable(raw_out(), rownames = F)
   })
 
+  ## Fred's code continues below
   output$btnDlAnalyse <- renderUI({
     # Show download button only when the result() dataframe changes
     # result() depends on the button input$optsAnalyse
-    req(formatted_out())
+    #req(formatted_out())
+    req(pooltestr_out())
     downloadButton("dlAnalyse", "Download results")
   })
 
@@ -271,7 +291,8 @@ server <- function(input, output, session) {
       paste("results_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(formatted_out(), file)
+      #write.csv(formatted_out(), file)
+      write.csv(pooltestr_out(), file)
     }
   )
 
