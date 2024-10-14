@@ -266,6 +266,7 @@ server <- function(input, output, session) {
   # - keep output for PoolPrev as Fred designed
   # - keep output for standard HierPoolPrev as Fred designed
   # - update formatting for output for ICC HierPoolPrev
+  # - update ICC column names with new helper function
   # - add dt_display function for all output types
   raw_out <- reactive({
     req(pooltestr_out())
