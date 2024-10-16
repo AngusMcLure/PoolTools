@@ -15,9 +15,9 @@ server <- function(input, output, session) {
     f <- input$fileAnalyse
     ext <- tools::file_ext(f$name)
     switch(ext,
-      csv = read.csv(f$datapath, header = TRUE),
-      xlsx = readxl::read_xlsx(f$datapath, col_names = TRUE),
-      validate("Unsupported file; Please upload a .csv or .xlsx file")
+           csv = read.csv(f$datapath, header = TRUE),
+           xlsx = readxl::read_xlsx(f$datapath, col_names = TRUE),
+           validate("Unsupported file; Please upload a .csv or .xlsx file")
     )
   })
 
@@ -59,8 +59,8 @@ server <- function(input, output, session) {
   output$colSelectTestResults <- renderUI({
     req(data())
     selectInputTT("colTestResults", "Test results",
-      tooltip = "Select one column from your data that contains the positive (1)/negative (0) pool results",
-      choices = c("Select column or type to search" = "", names(data()))
+                  tooltip = "Select one column from your data that contains the positive (1)/negative (0) pool results",
+                  choices = c("Select column or type to search" = "", names(data()))
     )
   })
   output$colSelectUnitNumber <- renderUI({
@@ -68,8 +68,8 @@ server <- function(input, output, session) {
     cols <- names(data())
     cols <- cols[!cols %in% input$colTestResults]
     selectInputTT("colUnitNumber", "Number of units per pool",
-      tooltip = "Select the column from your data that contains the number of units per pool",
-      choices = c("Select column or type to search" = "", cols)
+                  tooltip = "Select the column from your data that contains the number of units per pool",
+                  choices = c("Select column or type to search" = "", cols)
     )
   })
   output$validColSelect <- renderText({
@@ -86,8 +86,8 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsStratify", "Stratify data?",
-        tooltip = "Check box to calculate prevalence estimates for multiple strata within the dataset. Uncheck to calculate a single prevalence estimate for the whole dataset",
-        value = T
+                      tooltip = "Check box to calculate prevalence estimates for multiple strata within the dataset. Uncheck to calculate a single prevalence estimate for the whole dataset",
+                      value = T
       )
     )
   })
@@ -125,7 +125,7 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       checkboxInputTT("optsHierarchy", "Cluster/hierarchical sampling?",
-        tooltip = "Apply a hierarchical model to minimise overestimating confidence/credible intervals", value = FALSE
+                      tooltip = "Apply a hierarchical model to minimise overestimating confidence/credible intervals", value = FALSE
       )
     )
   })
@@ -154,7 +154,10 @@ server <- function(input, output, session) {
   output$validHierarchy <- renderText({
     req(input$optsHierarchy)
     validate(
-      need(length(input$optsHierarchyOrder) >= 2, "You must select and order at least 2 strata")
+      need(
+        length(input$optsHierarchyOrder) >= 2,
+        "You must select and order at least 2 strata"
+      )
     )
   })
 
@@ -230,11 +233,11 @@ server <- function(input, output, session) {
       result = input$colTestResults,
       poolSize = input$colUnitNumber
     )
-    ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
-    # TODO: Refactor so it uses `ptr_mode`
+    ptr_mode <- which_pooltestr(
+      input$optsStratify, input$optsHierarchy, input$optsBayesian
+    )
     out <- run_pooltestr(
-      req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
-      input$optsBayesian, input$optsColStratify
+      ptr_mode, req_args, input$optsHierarchyOrder, input$optsColStratify
     )
     shinybusy::remove_modal_spinner()
     list(df = out, mode = ptr_mode)
@@ -260,14 +263,11 @@ server <- function(input, output, session) {
   # # End of Fred's code
 
   ## Caitlin working here
-  ## Test - I can output raw PoolTestR dataframe with ICC columns!
-  ## TO DO:
-  # - keep class for PoolPrev/HierPoolPrev to inform output
+  ## TODO:
   # - keep output for PoolPrev as Fred designed
   # - keep output for standard HierPoolPrev as Fred designed
   # - update formatting for output for ICC HierPoolPrev
   # - update ICC column names with new helper function
-  # - add dt_display function for all output types
   raw_out <- reactive({
     req(pooltestr_out())
     pooltestr_out()$df
@@ -282,6 +282,7 @@ server <- function(input, output, session) {
   output$btnDlAnalyse <- renderUI({
     # Show download button only when the result() dataframe changes
     # result() depends on the button input$optsAnalyse
+    ## TODO change back to: req(formatted_out())
     #req(formatted_out())
     req(pooltestr_out())
     downloadButton("dlAnalyse", "Download results")
@@ -292,6 +293,7 @@ server <- function(input, output, session) {
       paste("results_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
+      # TODO output formatted_out()
       #write.csv(formatted_out(), file)
       write.csv(pooltestr_out(), file)
     }
@@ -339,12 +341,12 @@ server <- function(input, output, session) {
     tagList(
       tags$hr(style = "border-top: 1px solid #CCC;"),
       selectInputTT("optsPoolStrat", "Pooling strategy",
-        tooltip = "tooltip",
-        choices = c(
-          "Select" = "",
-          "Max size" = "pool_max_size",
-          "Target number" = "pool_target_number"
-        )
+                    tooltip = "tooltip",
+                    choices = c(
+                      "Select" = "",
+                      "Max size" = "pool_max_size",
+                      "Target number" = "pool_target_number"
+                    )
       ),
       numericInput("optsCatchMean", "Catch mean", value = NULL, min = 1, step = 1),
       numericInput("optsCatchVar", "Catch variance", value = NULL, min = 2, step = 1),
@@ -525,17 +527,17 @@ server <- function(input, output, session) {
       tags$br(),
       tags$br(),
       selectInputTT("optsPrevalence", "Prevalence",
-        tooltip = "The proportion of units that carry the marker of interest",
-        choices = c(
-          "Low (0.1%)" = 0.001,
-          "Med. (0.5%)" = 0.005,
-          "High (2%)" = 0.02,
-          "Other %" = "other"
-        ),
-        # This allows the UI to be initialised with a default value from the
-        # reactive data storage object. The use of isolate ensures that you
-        # don't get stuck in an infinite loop.
-        selected = isolate(design_opts$prev)
+                    tooltip = "The proportion of units that carry the marker of interest",
+                    choices = c(
+                      "Low (0.1%)" = 0.001,
+                      "Med. (0.5%)" = 0.005,
+                      "High (2%)" = 0.02,
+                      "Other %" = "other"
+                    ),
+                    # This allows the UI to be initialised with a default value from the
+                    # reactive data storage object. The use of isolate ensures that you
+                    # don't get stuck in an infinite loop.
+                    selected = isolate(design_opts$prev)
       ),
       conditionalPanel(
         condition = "input.optsPrevalence == 'other'",
@@ -544,14 +546,14 @@ server <- function(input, output, session) {
       if (input$optsClustered) {
         tagList(
           selectInputTT("optsCorrelation", "Within-cluster correlation",
-            tooltip = "The correlation between test results within a single cluster.",
-            choices = c(
-              "Low (1%)" = 0.01,
-              "Med. (10%)" = 0.1,
-              "High (30%)" = 0.3,
-              "Other %" = "other"
-            ),
-            selected = isolate(design_opts$rho)
+                        tooltip = "The correlation between test results within a single cluster.",
+                        choices = c(
+                          "Low (1%)" = 0.01,
+                          "Med. (10%)" = 0.1,
+                          "High (30%)" = 0.3,
+                          "Other %" = "other"
+                        ),
+                        selected = isolate(design_opts$rho)
           ),
           conditionalPanel(
             condition = "input.optsCorrelation == 'other'",
@@ -594,7 +596,7 @@ server <- function(input, output, session) {
   ### Server ----
   observeEvent(input$optsSensitivity, {
     # processOther divides by 100
-      design_opts$sens <- processOther(input, "optsSensitivity")
+    design_opts$sens <- processOther(input, "optsSensitivity")
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsSpecificity, {
@@ -623,16 +625,16 @@ server <- function(input, output, session) {
         tags$br(),
         tags$summary("Advanced settings", style = "display: list-item;"),
         selectInputTT("optsSensitivity", "Sensitivity",
-          tooltip = "The probability that the test correctly identifies a true positive.",
-          choices = c(
-            "Low (80%)" = 0.8,
-            "Med. (90%)" = 0.9,
-            "High (100%)" = 1,
-            "Other %" = "other"
-          ),
-          # Ensures that either the default, or new input value is shown when
-          # the UI changes.
-          selected = isolate(design_opts$sens)
+                      tooltip = "The probability that the test correctly identifies a true positive.",
+                      choices = c(
+                        "Low (80%)" = 0.8,
+                        "Med. (90%)" = 0.9,
+                        "High (100%)" = 1,
+                        "Other %" = "other"
+                      ),
+                      # Ensures that either the default, or new input value is shown when
+                      # the UI changes.
+                      selected = isolate(design_opts$sens)
         ),
         conditionalPanel(
           condition = "input.optsSensitivity == 'other'",
@@ -645,14 +647,14 @@ server <- function(input, output, session) {
           )
         ),
         selectInputTT("optsSpecificity", "Specificity",
-          tooltip = "The probability that the test correctly identifies a true negative.",
-          choices = c(
-            "Low (95%)" = 0.95,
-            "Med. (99%)" = 0.99,
-            "High (100%)" = 1,
-            "Other" = "other"
-          ), # 0.5-1
-          selected = isolate(design_opts$spec)
+                      tooltip = "The probability that the test correctly identifies a true negative.",
+                      choices = c(
+                        "Low (95%)" = 0.95,
+                        "Med. (99%)" = 0.99,
+                        "High (100%)" = 1,
+                        "Other" = "other"
+                      ), # 0.5-1
+                      selected = isolate(design_opts$spec)
         ),
         conditionalPanel(
           condition = "input.optsSpecificity == 'other'",
@@ -688,7 +690,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$optsSensitivity, {
     # processOther divides by 100
-      design_opts$sens <- processOther(input, "optsSensitivity")
+    design_opts$sens <- processOther(input, "optsSensitivity")
   }, ignoreNULL = TRUE)
 
   observeEvent(input$optsSpecificity, {

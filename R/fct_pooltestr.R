@@ -52,29 +52,30 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 
 #' Run PoolTestR
 #'
-#' TODO: Refactor so it uses ptr_mode as input
+#' `pooltestr_mode` is output from \code{which_pooltestr}, and determines
+#' the calculations performed by `PoolTestR`
 #'
-#' `pooltestr_mode` is the output from \code{which_pooltestr}
-#'
-#' @param req_args
-#' @param stratify
-#' @param hierarchy
-#' @param hier_vars
-#' @param bayesian
-#' @param stratify_vars
 #' @param pooltestr_mode
+#' @param req_args
+#' @param hier_vars
+#' @param stratify_vars
 #'
 #' @return dataframe
 #' @name run_pooltestr
 #' @seealso \code{\link{which_pooltestr}}
-run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, stratify_vars, pooltestr_mode) {
 
-  if (!hierarchy | pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
+run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
+  if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
       pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
-    # Add Bayesian switch for PoolPrev
+    # Add Bayesian switch for all PoolPrev modes
     poolprev_args <- req_args
-    poolprev_args$bayesian <- bayesian
-    if (!stratify | pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_bayes") {
+    if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat"){
+      poolprev_args$bayesian <- FALSE
+    } else if (pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat"){
+      poolprev_args$bayesian <- TRUE
+    }
+    # Run PoolTestR and format output
+    if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_bayes") {
       # Run PoolTestR (estimate prevalence on whole data) for:
       #     1. PoolPrev
       #     3. PoolPrev (Bayesian)
@@ -95,20 +96,20 @@ run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, st
     # Format output for:
     #     3. PoolPrev (Bayesian)
     #     4. PoolPrev (Bayesian, Stratified)
-    if (bayesian | pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
+    if (pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
       data <- data %>%
         rename_bayes()
     }
-  } else if (hierarchy | pooltestr_mode == "hierpoolprev" | pooltestr_mode == "hierpoolprev_strat") {
+  } else if (pooltestr_mode == "hierpoolprev" | pooltestr_mode == "hierpoolprev_strat") {
     # Account for hierarchical sampling structure
     hier_args <- req_args
     hier_args$hierarchy <- hier_vars
-    if (stratify | pooltestr_mode == "hierpoolprev_strat") {
+    if (pooltestr_mode == "hierpoolprev_strat") {
       # Prepare hierarchical input for:
       #   6. HierPoolPrev (Stratified)
       hier_args <- c(hier_args, lapply(stratify_vars, as.name))
     }
-    # Run PoolTestR (account for hierarchical sampling structure) for:
+    # Run PoolTestR for:
     #     5. HierPoolPrev (Unstrat.)
     #     6. HierPoolPrev (Strat.)
     data <-
