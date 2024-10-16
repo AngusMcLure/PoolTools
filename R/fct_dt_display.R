@@ -37,6 +37,19 @@ rename_pools <- function(df) {
   )
 }
 
+#' @rdname rename_cols
+rename_ICC <- function(df) {
+  col_names <- names(df)
+  new_col_names <- col_names
+  new_col_names[grep("ICC", all_col_names)] <-
+    new_col_names[grep("ICC", all_col_names)] %>%
+    { gsub("_CrILow", "\nLower Credible Interval (95%)", .) } %>%
+    { gsub("_CrIHigh", "\nUpper Credible Interval (95%)", .) }
+  names(df) <- new_col_names
+  return(df)
+}
+
+
 #' Rounding PoolTestR Columns
 #'
 #' Allows users to specify how many digits to round to. Rounds Prevalence and
@@ -58,6 +71,16 @@ round_with_trailing <- function(x, digits) {
 #' @rdname round_cols
 round_pool_cols <- function(df, digits, cols) {
   dplyr::mutate(df, across(cols, ~ round_with_trailing(., digits)))
+}
+
+#' @rdname round_cols
+signif_with_trailing <- function(x, digits) {
+  sprintf(paste0("%.", (digits - 1), "e"), signif(x, digits))
+}
+
+#' @rdname round_cols
+signif_pool_cols <- function(df, digits, cols) {
+  dplyr::mutate(df, across(cols, ~ signif_with_trailing(., digits)))
 }
 
 #' @rdname round_cols
@@ -91,6 +114,7 @@ bayes_cols <- c(
 #' @return dataframe
 #' @name dt_display
 dt_display <- function(df, ptr_mode, per_val, digits) {
+  # TODO add poolprev_bayes_strat here
   # poolprev_bayes requires both transformations
   if (ptr_mode %in% c("poolprev", "poolprev_strat", "poolprev_bayes")) {
     df <- df %>%
@@ -102,6 +126,19 @@ dt_display <- function(df, ptr_mode, per_val, digits) {
       multiply_cols(bayes_cols, per_val) %>%
       round_pool_cols(digits = digits, cols = bayes_cols)
   }
+  # Round ICC columns - use scientific format when min. column value < 0.0001
+  icc_col_inds    <- grep("ICC", names(df))
+  icc_col_names   <- names(df)[icc_col_inds]
+  min_col_values  <- unlist(lapply(icc_col_inds, function(i){min(df[, i])}))
+  icc_cols_round  <- icc_col_names[which(min_col_values >= 0.0001)]
+  icc_cols_sf     <- icc_col_names[which(min_col_values < 0.0001)]
+  if (length(icc_col_names) > 0){
+    df <- df %>%
+      multiply_cols(icc_col_names, per_val) %>%
+      round_pool_cols(digits = digits, cols = icc_cols_round) %>%
+      signif_pool_cols(digits = digits, cols = icc_cols_sf)
+  }
+  # Return formatted df
   return(df)
 }
 
@@ -141,9 +178,14 @@ extract_matrix_column_ICC <- function(cluster_var, df){
     # Extract only the columns for this clustering variable
     matrix_cols <- df %>%
       select(grep("ICC", names(df), value = T))
-    cluster_cols <- as_tibble(lapply(names(matrix_cols),
-                                     function(x){matrix_cols[[x]][ , which(all_cluster_vars == cluster_var)]}),
-                              .name_repair = "minimal")
+    cluster_cols <- as_tibble(
+      lapply(
+        names(matrix_cols),
+        function(x){
+          matrix_cols[[x]][ , which(all_cluster_vars == cluster_var)]
+        }
+      ),
+      .name_repair = "minimal")
     names(cluster_cols) <- paste0(cluster_var, " ", names(matrix_cols))
     return(cluster_cols)
   } else {

@@ -243,48 +243,28 @@ server <- function(input, output, session) {
     list(df = out, mode = ptr_mode)
   })
 
-  # # Fred's code to output PoolTestR results - the reformatting here doesn't work now extra columns are added
-  # formatted_out <- reactive({
-  #   # Format pooltestr table output i.e. round values, or display prevalence
-  #   # per value
-  #   req(pooltestr_out())
-  #   dt_display(
-  #     df = pooltestr_out()$df,
-  #     ptr_mode = pooltestr_out()$mode,
-  #     per_val = as.integer(input$optsPerPrevVal),
-  #     digits = as.integer(input$optsRoundAnalyse)
-  #   )
-  # })
-  #
-  # output$outAnalyse <- renderDataTable({
-  #   req(formatted_out())
-  #   datatable(formatted_out(), rownames = F)
-  # })
-  # # End of Fred's code
-
-  ## Caitlin working here
-  ## TODO:
-  # - keep output for PoolPrev as Fred designed
-  # - keep output for standard HierPoolPrev as Fred designed
-  # - update formatting for output for ICC HierPoolPrev
-  # - update ICC column names with new helper function
-  raw_out <- reactive({
+  formatted_out <- reactive({
+    # Format pooltestr table output i.e. round values, or display prevalence
+    # per value
     req(pooltestr_out())
-    pooltestr_out()$df
+    dt_display(
+      df = pooltestr_out()$df,
+      ptr_mode = pooltestr_out()$mode,
+      per_val = as.integer(input$optsPerPrevVal),
+      digits = as.integer(input$optsRoundAnalyse)
+    )
   })
 
   output$outAnalyse <- renderDataTable({
-    req(pooltestr_out())
-    datatable(raw_out(), rownames = F)
+    # Output the formatted data frame
+    req(formatted_out())
+    datatable(formatted_out(), rownames = F)
   })
 
-  ## Fred's code continues below
   output$btnDlAnalyse <- renderUI({
     # Show download button only when the result() dataframe changes
     # result() depends on the button input$optsAnalyse
-    ## TODO change back to: req(formatted_out())
-    #req(formatted_out())
-    req(pooltestr_out())
+    req(formatted_out())
     downloadButton("dlAnalyse", "Download results")
   })
 
@@ -293,9 +273,7 @@ server <- function(input, output, session) {
       paste("results_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      # TODO output formatted_out()
-      #write.csv(formatted_out(), file)
-      write.csv(pooltestr_out(), file)
+      write.csv(formatted_out(), file)
     }
   )
 
