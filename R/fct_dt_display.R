@@ -129,10 +129,10 @@ dt_display <- function(df, ptr_mode, per_val, digits) {
   # Round ICC columns - use scientific format when min. column value < 0.0001
   icc_col_inds    <- grep("ICC", names(df))
   icc_col_names   <- names(df)[icc_col_inds]
-  min_col_values  <- unlist(lapply(icc_col_inds, function(i){min(df[, i])}))
-  icc_cols_round  <- icc_col_names[which(min_col_values >= 0.0001)]
-  icc_cols_sf     <- icc_col_names[which(min_col_values < 0.0001)]
   if (length(icc_col_names) > 0){
+    min_col_values  <- unlist(lapply(icc_col_inds, function(i){min(df[, i])}))
+    icc_cols_round  <- icc_col_names[which(min_col_values >= 0.0001)]
+    icc_cols_sf     <- icc_col_names[which(min_col_values < 0.0001)]
     df <- df %>%
       multiply_cols(icc_col_names, per_val) %>%
       round_pool_cols(digits = digits, cols = icc_cols_round) %>%
