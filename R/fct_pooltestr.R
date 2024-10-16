@@ -40,9 +40,9 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
         return("poolprev_bayes")
       }
     } else if (stratify) {
-      return("poolprev_strat") # 2. Stratified
+      return("poolprev_strat") # 2. PoolPrev - Stratified
     } else {
-      return("poolprev") # 1. Whole
+      return("poolprev") # 1. PoolPrev - Whole (Unstratified)
     }
   }
   # safety check
@@ -65,6 +65,8 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 #' @seealso \code{\link{which_pooltestr}}
 
 run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
+  # TODO remove print statement after testing all 6 formats
+  print(paste0("mode: ", pooltestr_mode))
   if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
       pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
     # Add Bayesian switch for all PoolPrev modes
@@ -112,20 +114,16 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     # Run PoolTestR for:
     #     5. HierPoolPrev (Unstrat.)
     #     6. HierPoolPrev (Strat.)
-    data <-
-      do.call(PoolTestR::HierPoolPrev, hier_args)
-
-    ## Old formatting
-    # data <-
-    #   do.call(PoolTestR::HierPoolPrev, hier_args) %>%
-    #   rename_bayes() %>%
-    #   rename_pools()
-
-    # If ICC columns are present, update formatting
+    data <- do.call(PoolTestR::HierPoolPrev, hier_args)
+    # Format output
     if ("ICC" %in% names(data)){
-      data <- reformat_ICC_cols(data)
+      data <- data %>%
+        reformat_ICC_cols() %>%
+        rename_ICC()
     }
-
+    data <- data %>%
+      rename_bayes() %>%
+      rename_pools()
   } else {
     return(NULL)
   }
