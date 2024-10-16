@@ -68,141 +68,66 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 #' @name run_pooltestr
 #' @seealso \code{\link{which_pooltestr}}
 run_pooltestr <- function(req_args, stratify, hierarchy, hier_vars, bayesian, stratify_vars, pooltestr_mode) {
-  if (pooltestr_mode == "poolprev"){
-    # 1. PoolPrev - Estimate prevalence on whole data
-    # TODO check output formatting
-    data <-
-      do.call(PoolTestR::PoolPrev, poolprev_args) %>%
-      rename_mle() %>%
-      rename_pools()
-  } else if (pooltestr_mode == "poolprev_strat"){
-    # 2. PoolPrev (Stratified): Estimate prevalence for each selected column
-    # TODO check output formatting
-    col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
-    data <-
-      do.call(PoolTestR::PoolPrev, col_args) %>%
-      rename_mle() %>%
-      rename_pools()
-  } else if (pooltestr_mode == "poolprev_bayes"){
-    # 3. PoolPrev (Bayesian) - Unstratified
-    # TODO check where pooltestr is called for this option
-    # TODO check output formatting
 
-    # Add bayesian switch for PoolPrev
+  if (!hierarchy | pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
+      pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
+    # Add Bayesian switch for PoolPrev
     poolprev_args <- req_args
     poolprev_args$bayesian <- bayesian
-    # PoolPrev (Unstratified) - Estimate prevalence on whole data
-    data <-
-      do.call(PoolTestR::PoolPrev, poolprev_args) %>%
-      rename_mle() %>%
-      rename_pools()
-    # Formatting
-    data <- data %>%
-      rename_bayes()
-  } else if (pooltestr_mode == "poolprev_bayes_strat"){
-    # 4. PoolPrev (Bayesian) - Stratified
-    # TODO check where pooltestr is called for this option
-    # TODO check output formatting
-    # Add bayesian switch for PoolPrev
-    poolprev_args <- req_args
-    poolprev_args$bayesian <- bayesian
-    # PoolPrev (Stratified): Estimate prevalence for each selected column
-    col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
-    data <-
-      do.call(PoolTestR::PoolPrev, col_args) %>%
-      rename_mle() %>%
-      rename_pools()
-    # Formatting
-    data <- data %>%
-      rename_bayes()
-  } else if (pooltestr_mode == "hierpoolprev"){
-    # 5. HierPoolPrev (Unstrat.) with ICC (no formatting applied)
-    # TODO check output formatting
+    if (!stratify | pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_bayes") {
+      # Run PoolTestR (estimate prevalence on whole data) for:
+      #     1. PoolPrev
+      #     3. PoolPrev (Bayesian)
+      data <-
+        do.call(PoolTestR::PoolPrev, poolprev_args) %>%
+        rename_mle() %>%
+        rename_pools()
+    } else {
+      # Run PoolTestR (estimate prevalence for each selected column) for:
+      #     2. PoolPrev (Stratified)
+      #     4. PoolPrev (Bayesian, Stratified)
+      col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
+      data <-
+        do.call(PoolTestR::PoolPrev, col_args) %>%
+        rename_mle() %>%
+        rename_pools()
+    }
+    # Format output for:
+    #     3. PoolPrev (Bayesian)
+    #     4. PoolPrev (Bayesian, Stratified)
+    if (bayesian | pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
+      data <- data %>%
+        rename_bayes()
+    }
+  } else if (hierarchy | pooltestr_mode == "hierpoolprev" | pooltestr_mode == "hierpoolprev_strat") {
     # Account for hierarchical sampling structure
     hier_args <- req_args
     hier_args$hierarchy <- hier_vars
-    # Call HierPoolPrev
+    if (stratify | pooltestr_mode == "hierpoolprev_strat") {
+      # Prepare hierarchical input for:
+      #   6. HierPoolPrev (Stratified)
+      hier_args <- c(hier_args, lapply(stratify_vars, as.name))
+    }
+    # Run PoolTestR (account for hierarchical sampling structure) for:
+    #     5. HierPoolPrev (Unstrat.)
+    #     6. HierPoolPrev (Strat.)
+    data <-
+      do.call(PoolTestR::HierPoolPrev, hier_args)
+
+    ## Old formatting
     # data <-
     #   do.call(PoolTestR::HierPoolPrev, hier_args) %>%
     #   rename_bayes() %>%
     #   rename_pools()
-    data <-
-      do.call(PoolTestR::HierPoolPrev, hier_args)
-  } else if (pooltestr_mode == "hierpoolprev_strat"){
-    # 6. HierPoolPrev (Stratified)
-    # Account for hierarchical sampling structure
-    # TODO check output formatting
-    hier_args <- req_args
-    hier_args$hierarchy <- hier_vars
-    hier_args <- c(hier_args, lapply(stratify_vars, as.name))
-    # Call HierPoolPrev
-    # data <-
-    #   do.call(PoolTestR::HierPoolPrev, hier_args) %>%
-    #   rename_bayes() %>%
-    #   rename_pools()
-    data <-
-      do.call(PoolTestR::HierPoolPrev, hier_args)
-    # Formatting for ICC cols
+
+    # If ICC columns are present, update formatting
     if ("ICC" %in% names(data)){
       data <- reformat_ICC_cols(data)
-  }
+    }
 
-  # If ICC columns are present, update formatting
-  if ("ICC" %in% names(data)){
-    data <- reformat_ICC_cols(data)
+  } else {
+    return(NULL)
   }
-
-#
-#   if (!hierarchy) {
-#     # Add bayesian switch for PoolPrev
-#     poolprev_args <- req_args
-#     poolprev_args$bayesian <- bayesian
-#     if (!stratify) {
-#       # 1. PoolPrev - Estimate prevalence on whole data
-#       data <-
-#         do.call(PoolTestR::PoolPrev, poolprev_args) %>%
-#         rename_mle() %>%
-#         rename_pools()
-#     } else {
-#       # 2. PoolPrev (Stratified): Estimate prevalence for each selected column
-#       col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
-#       data <-
-#         do.call(PoolTestR::PoolPrev, col_args) %>%
-#         rename_mle() %>%
-#         rename_pools()
-#     }
-#
-#     # 3-4. PoolPrev (Bayesian) - either on whole or stratified
-#     if (bayesian) {
-#       data <- data %>%
-#         rename_bayes()
-#     }
-#   } else if (hierarchy) {
-#     # Account for hierarchical sampling structure
-#     hier_args <- req_args
-#     hier_args$hierarchy <- hier_vars
-#     # 6. HierPoolPrev (Stratified)
-#     if (stratify) {
-#       hier_args <- c(hier_args, lapply(stratify_vars, as.name))
-#     }
-#     # # 5. HierPoolPrev (Unstrat.) without ICC
-#     # data <-
-#     #   do.call(PoolTestR::HierPoolPrev, hier_args) %>%
-#     #   rename_bayes() %>%
-#     #   rename_pools()
-#
-#     # 5. HierPoolPrev (Unstrat.) with ICC (no formatting applied)
-#     data <-
-#       do.call(PoolTestR::HierPoolPrev, hier_args)
-#
-#     # If ICC columns are present, update formatting
-#     if ("ICC" %in% names(data)){
-#       data <- reformat_ICC_cols(data)
-#     }
-#
-#   } else {
-#     return(NULL)
-#   }
 
   if ("ProbAbsent" %in% names(data)) {
     data <- data %>% select(-ProbAbsent)
