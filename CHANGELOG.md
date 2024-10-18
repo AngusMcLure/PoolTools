@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
+## [0.1.5] - 2024-10-18
+
+### Added  
+- `ICC` branch added. 
+  - Updated to use `PoolTestR@ICC` version (includes ICC columns) in output 
+  - `PoolTools` output includes formatted ICC columns
+
+### Changed
+- Refactored `run_pooltestr()` to use output of `which_pooltestr()` (i.e., one of six analysis types) 
+
 ## [0.1.4] - 2024-07-19
 
 ### Added  
