@@ -70,7 +70,7 @@ round_with_trailing <- function(x, digits) {
 
 #' @rdname round_cols
 round_pool_cols <- function(df, digits, cols) {
-  dplyr::mutate(df, across(cols, ~ round_with_trailing(., digits)))
+  dplyr::mutate_at(df, cols, ~ round_with_trailing(., digits))
 }
 
 #' @rdname round_cols
@@ -80,7 +80,7 @@ signif_with_trailing <- function(x, digits) {
 
 #' @rdname round_cols
 signif_pool_cols <- function(df, digits, cols) {
-  dplyr::mutate(df, across(cols, ~ signif_with_trailing(., digits)))
+  dplyr::mutate_at(df, cols, ~ signif_with_trailing(., digits))
 }
 
 #' @rdname round_cols
@@ -143,10 +143,7 @@ dt_display <- function(df, ptr_mode, per_val, digits) {
 
 #' @rdname dt_display
 multiply_cols <- function(df, cols, val) {
-  dplyr::mutate(
-    df,
-    dplyr::across(cols, ~ as.numeric(.) * val)
-  )
+  dplyr::mutate_at(df, cols, ~ as.numeric(.) * val)
 }
 
 #' Display ICCs
