@@ -43,8 +43,12 @@ rename_ICC <- function(df) {
   new_col_names <- col_names
   new_col_names[grep("ICC", col_names)] <-
     new_col_names[grep("ICC", col_names)] %>%
-    { gsub("_CrILow", "\nLower Credible Interval (95%)", .) } %>%
-    { gsub("_CrIHigh", "\nUpper Credible Interval (95%)", .) }
+    {
+      gsub("_CrILow", "\nLower Credible Interval (95%)", .)
+    } %>%
+    {
+      gsub("_CrIHigh", "\nUpper Credible Interval (95%)", .)
+    }
   names(df) <- new_col_names
   return(df)
 }
@@ -126,12 +130,14 @@ dt_display <- function(df, ptr_mode, per_val, digits) {
       round_pool_cols(digits = digits, cols = bayes_cols)
   }
   # Round ICC columns - use scientific format when min. column value < 0.0001
-  icc_col_inds    <- grep("ICC", names(df))
-  icc_col_names   <- names(df)[icc_col_inds]
-  if (length(icc_col_names) > 0){
-    min_col_values  <- unlist(lapply(icc_col_inds, function(i){min(df[, i])}))
-    icc_cols_round  <- icc_col_names[which(min_col_values >= 0.0001)]
-    icc_cols_sf     <- icc_col_names[which(min_col_values < 0.0001)]
+  icc_col_inds <- grep("ICC", names(df))
+  icc_col_names <- names(df)[icc_col_inds]
+  if (length(icc_col_names) > 0) {
+    min_col_values <- unlist(lapply(icc_col_inds, function(i) {
+      min(df[, i])
+    }))
+    icc_cols_round <- icc_col_names[which(min_col_values >= 0.0001)]
+    icc_cols_sf <- icc_col_names[which(min_col_values < 0.0001)]
     df <- df %>%
       multiply_cols(icc_col_names, per_val) %>%
       round_pool_cols(digits = digits, cols = icc_cols_round) %>%
@@ -168,20 +174,21 @@ reformat_ICC_cols <- function(df) {
   return(icc_output)
 }
 
-extract_matrix_column_ICC <- function(cluster_var, df){
+extract_matrix_column_ICC <- function(cluster_var, df) {
   all_cluster_vars <- attr(df$ICC, "dimnames")[[2]]
-  if (cluster_var %in% all_cluster_vars){
+  if (cluster_var %in% all_cluster_vars) {
     # Extract only the columns for this clustering variable
     matrix_cols <- df %>%
       select(grep("ICC", names(df), value = T))
     cluster_cols <- as_tibble(
       lapply(
         names(matrix_cols),
-        function(x){
-          matrix_cols[[x]][ , which(all_cluster_vars == cluster_var)]
+        function(x) {
+          matrix_cols[[x]][, which(all_cluster_vars == cluster_var)]
         }
       ),
-      .name_repair = "minimal")
+      .name_repair = "minimal"
+    )
     names(cluster_cols) <- paste0(cluster_var, " ", names(matrix_cols))
     return(cluster_cols)
   } else {

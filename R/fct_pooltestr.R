@@ -66,12 +66,12 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 
 run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
   if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
-      pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
+    pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
     # Add Bayesian switch for all PoolPrev modes
     poolprev_args <- req_args
-    if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat"){
+    if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat") {
       poolprev_args$bayesian <- FALSE
-    } else if (pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat"){
+    } else if (pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
       poolprev_args$bayesian <- TRUE
     }
     # Run PoolTestR and format output
@@ -115,7 +115,7 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     data <- do.call(PoolTestR::HierPoolPrev, hier_args)
     # Remove class
     # Format output
-    if ("ICC" %in% names(data)){
+    if ("ICC" %in% names(data)) {
       data <- data %>%
         reformat_ICC_cols() %>%
         rename_ICC()
