@@ -41,8 +41,8 @@ rename_pools <- function(df) {
 rename_ICC <- function(df) {
   col_names <- names(df)
   new_col_names <- col_names
-  new_col_names[grep("ICC", all_col_names)] <-
-    new_col_names[grep("ICC", all_col_names)] %>%
+  new_col_names[grep("ICC", col_names)] <-
+    new_col_names[grep("ICC", col_names)] %>%
     { gsub("_CrILow", "\nLower Credible Interval (95%)", .) } %>%
     { gsub("_CrIHigh", "\nUpper Credible Interval (95%)", .) }
   names(df) <- new_col_names
