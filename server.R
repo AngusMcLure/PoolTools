@@ -227,18 +227,15 @@ server <- function(input, output, session) {
   })
 
   pooltestr_out <- eventReactive(input$optsAnalyse, {
-    print("IN pooltestr_out")
     shinybusy::show_modal_spinner(text = "Analysing...")
     req_args <- list(
       data = data(),
       result = input$colTestResults,
       poolSize = input$colUnitNumber
     )
-    print("CALL which_pooltestr")
     ptr_mode <- which_pooltestr(
       input$optsStratify, input$optsHierarchy, input$optsBayesian
     )
-    print("CALL run_pooltestr")
     out <- run_pooltestr(
       ptr_mode, req_args, input$optsHierarchyOrder, input$optsColStratify
     )
@@ -249,7 +246,6 @@ server <- function(input, output, session) {
   formatted_out <- reactive({
     # Format pooltestr table output i.e. round values, or display prevalence
     # per value
-    print("IN formatted_out")
     req(pooltestr_out())
     dt_display(
       df = pooltestr_out()$df,
@@ -257,13 +253,11 @@ server <- function(input, output, session) {
       per_val = as.integer(input$optsPerPrevVal),
       digits = as.integer(input$optsRoundAnalyse)
     )
-    print("after dt_display")
   })
 
   output$outAnalyse <- renderDataTable({
     # Output the formatted data frame
     req(formatted_out())
-    print("IN output$outAnalyse")
     datatable(formatted_out(), rownames = F)
   })
 

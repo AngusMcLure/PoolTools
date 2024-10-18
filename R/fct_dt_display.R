@@ -65,25 +65,21 @@ rename_ICC <- function(df) {
 #' @param cols character vector Either mle or bayes column names to round
 #' @name round_cols
 round_with_trailing <- function(x, digits) {
-  print("IN round_with_trailing")
   sprintf(paste0("%.", digits, "f"), round(x, digits))
 }
 
 #' @rdname round_cols
 round_pool_cols <- function(df, digits, cols) {
-  print("IN round_pool_cols")
   dplyr::mutate(df, across(cols, ~ round_with_trailing(., digits)))
 }
 
 #' @rdname round_cols
 signif_with_trailing <- function(x, digits) {
-  print("IN signif_with_trailing")
   sprintf(paste0("%.", (digits - 1), "e"), signif(x, digits))
 }
 
 #' @rdname round_cols
 signif_pool_cols <- function(df, digits, cols) {
-  print("IN signif_pool_cols")
   dplyr::mutate(df, across(cols, ~ signif_with_trailing(., digits)))
 }
 
@@ -118,26 +114,21 @@ bayes_cols <- c(
 #' @return dataframe
 #' @name dt_display
 dt_display <- function(df, ptr_mode, per_val, digits) {
-  print("IN dt_display")
   # poolprev_bayes requires both transformations
   if (ptr_mode %in% c("poolprev", "poolprev_strat", "poolprev_bayes", "poolprev_bayes_strat")) {
-    print("mle cols transform")
     df <- df %>%
       multiply_cols(mle_cols, per_val) %>%
       round_pool_cols(digits = digits, cols = mle_cols)
   }
   if (ptr_mode %in% c("poolprev_bayes", "poolprev_bayes_strat", "hierpoolprev", "hierpoolprev_strat")) {
-    print("Bayes cols transform")
     df <- df %>%
       multiply_cols(bayes_cols, per_val) %>%
       round_pool_cols(digits = digits, cols = bayes_cols)
   }
-  print("check for ICC cols")
   # Round ICC columns - use scientific format when min. column value < 0.0001
   icc_col_inds    <- grep("ICC", names(df))
   icc_col_names   <- names(df)[icc_col_inds]
   if (length(icc_col_names) > 0){
-    print("ICC cols exist")
     min_col_values  <- unlist(lapply(icc_col_inds, function(i){min(df[, i])}))
     icc_cols_round  <- icc_col_names[which(min_col_values >= 0.0001)]
     icc_cols_sf     <- icc_col_names[which(min_col_values < 0.0001)]
@@ -152,7 +143,6 @@ dt_display <- function(df, ptr_mode, per_val, digits) {
 
 #' @rdname dt_display
 multiply_cols <- function(df, cols, val) {
-  print("IN multiply_cols")
   dplyr::mutate(
     df,
     dplyr::across(cols, ~ as.numeric(.) * val)
@@ -171,26 +161,19 @@ multiply_cols <- function(df, cols, val) {
 #' @return dataframe
 #' @name icc_display
 reformat_ICC_cols <- function(df) {
-  print("IN reformat_ICC_cols")
   # Remove ICC columns
   icc_names <- attr(df$ICC, "dimnames")[[2]]
   trimmed_object <- df %>%
     select(-contains("ICC", ignore.case = TRUE))
   # Reformat matrix columns by clustering variables and reattach to df
-  print("call extract_matrix_column_ICC")
   icc_tbls <- lapply(icc_names, extract_matrix_column_ICC, df)
-  print("bind cols")
   icc_output <- as.data.frame(bind_cols(trimmed_object, icc_tbls))
   return(icc_output)
 }
 
 extract_matrix_column_ICC <- function(cluster_var, df){
-  print("IN extract_matrix_column_ICC")
   all_cluster_vars <- attr(df$ICC, "dimnames")[[2]]
-  print(all_cluster_vars)
-  print(str(df))
   if (cluster_var %in% all_cluster_vars){
-    print("in if")
     # Extract only the columns for this clustering variable
     matrix_cols <- df %>%
       select(grep("ICC", names(df), value = T))
@@ -202,16 +185,9 @@ extract_matrix_column_ICC <- function(cluster_var, df){
         }
       ),
       .name_repair = "minimal")
-    print(names(cluster_cols))
-    print(str(cluster_cols))
-    print( paste0(cluster_var, " ", names(matrix_cols)))
     names(cluster_cols) <- paste0(cluster_var, " ", names(matrix_cols))
-    print("above return(cluster_cols)")
-    print(names(cluster_cols))
-    print(str(cluster_cols))
     return(cluster_cols)
   } else {
-    print("in else")
     return(NULL)
   }
 }
