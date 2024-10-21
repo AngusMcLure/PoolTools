@@ -9,12 +9,15 @@ and this project adheres to
 ## [0.1.5] - 2024-10-18
 
 ### Added  
-- `ICC` branch added. 
-  - Updated to use `PoolTestR@ICC` version (includes ICC columns) in output 
-  - `PoolTools` output includes formatted ICC columns
+- `ICC` branch added and used to create v0.1.5
+- Updated to use `PoolTestR@ICC` version (includes ICC columns)
+- `PoolTools` output now includes formatted ICC columns
+- Updated prevalence columns names to explicitly state prevalence per units by
+appending "%" (N=100) or "per N units" (N != 100) in output data frame
+  - ICC columns are not multiplied by N
 
 ### Changed
-- Refactored `run_pooltestr()` to use output of `which_pooltestr()` (i.e., one of six analysis types) 
+- Refactored `run_pooltestr()` to use output of `which_pooltestr()` 
 
 ## [0.1.4] - 2024-07-19
 
