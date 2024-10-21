@@ -197,20 +197,23 @@ dt_display <- function(df, ptr_mode, per_val, digits, per_prev = TRUE) {
   names(df) <- per_unit_label(
     column_names = names(df), ptr_mode = ptr_mode, per_val = per_val
   )
-  # extract all columns from ICC using clustering variables
-  clustering_vars <- gsub(" ICC", "", grep("ICC", names(df), value = TRUE))
-  icc_col_inds <- grep(paste(clustering_vars, collapse = "|"), names(df))
-  icc_col_names <- names(df)[icc_col_inds]
-  if (length(icc_col_names) > 0) {
-    min_col_values <- unlist(lapply(icc_col_inds, function(i) {
-      min(df[, i])
-    }))
-    check_val <- 1*10^(-digits) # display ICC output with `digits` sig. figs.
-    icc_cols_round <- icc_col_names[which(min_col_values >= check_val)]
-    icc_cols_sf <- icc_col_names[which(min_col_values < check_val)]
-    df <- df %>%
-      round_pool_cols(digits = digits, cols = icc_cols_round) %>%
-      signif_pool_cols(digits = digits, cols = icc_cols_sf)
+  # extract all columns from ICC using clustering variables, if ICC cols present
+  icc_check <- grep("ICC", names(df))
+  if (! identical(integer(0), icc_check) ){
+    clustering_vars <- gsub(" ICC", "", grep("ICC", names(df), value = TRUE))
+    icc_col_inds <- grep(paste(clustering_vars, collapse = "|"), names(df))
+    icc_col_names <- names(df)[icc_col_inds]
+    if (length(icc_col_names) > 0) {
+      min_col_values <- unlist(lapply(icc_col_inds, function(i) {
+        min(df[, i])
+      }))
+      check_val <- 1*10^(-digits) # display ICC output with `digits` sig. figs.
+      icc_cols_round <- icc_col_names[which(min_col_values >= check_val)]
+      icc_cols_sf <- icc_col_names[which(min_col_values < check_val)]
+      df <- df %>%
+        round_pool_cols(digits = digits, cols = icc_cols_round) %>%
+        signif_pool_cols(digits = digits, cols = icc_cols_sf)
+    }
   }
   return(df)
 }
