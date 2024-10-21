@@ -66,7 +66,7 @@ which_pooltestr <- function(stratify, hierarchy, bayesian) {
 
 run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
   if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat" |
-    pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
+      pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
     # Add Bayesian switch for all PoolPrev modes
     poolprev_args <- req_args
     if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_strat") {
@@ -81,6 +81,7 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
       #     3. PoolPrev (Bayesian)
       data <-
         do.call(PoolTestR::PoolPrev, poolprev_args) %>%
+        as_tibble() %>%
         rename_mle() %>%
         rename_pools()
     } else {
@@ -90,6 +91,7 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
       col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
       data <-
         do.call(PoolTestR::PoolPrev, col_args) %>%
+        as_tibble() %>%
         rename_mle() %>%
         rename_pools()
     }
@@ -112,7 +114,8 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     # Run PoolTestR for:
     #     5. HierPoolPrev (Unstrat.)
     #     6. HierPoolPrev (Strat.)
-    data <- do.call(PoolTestR::HierPoolPrev, hier_args)
+    data <- do.call(PoolTestR::HierPoolPrev, hier_args) %>%
+      as_tibble()
     # Remove class
     # Format output
     if ("ICC" %in% names(data)) {
