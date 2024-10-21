@@ -11,8 +11,8 @@
 #' | 2  | PoolPrev + strat         | FALSE     | TRUE       | FALSE     |
 #' | 3  | PoolPrev + bayes         | TRUE      | FALSE      | FALSE     |
 #' | 4  | PoolPrev + strat + bayes | TRUE      | TRUE       | FALSE     |
-#' | 5  | HierPoolPrev             | NA (TRUE) | FALSE      | TRUE      |
-#' | 6  | HierPoolPrev + strat     | NA (TRUE) | TRUE       | TRUE      |
+#' | 5  | HierPoolPrev             | NA        | FALSE      | TRUE      |
+#' | 6  | HierPoolPrev + strat     | NA        | TRUE       | TRUE      |
 #'
 #' `bayesian` flag doesn't apply to HierPoolPrev as it is used by default.
 #'
