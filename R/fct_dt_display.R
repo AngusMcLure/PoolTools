@@ -12,11 +12,12 @@
 #' @return dataframe
 #' @name rename_cols
 rename_mle <- function(df) {
-  df %>% rename(
-    `Prevalence (Maximum Likelihood Estimate)` = PrevMLE,
-    `Lower Confidence Interval (95%)` = CILow,
-    `Upper Confidence Interval (95%)` = CIHigh
-  )
+  df %>%
+    rename(
+      `Prevalence (Maximum Likelihood Estimate)` = PrevMLE,
+      `Lower Confidence Interval (95%)` = CILow,
+      `Upper Confidence Interval (95%)` = CIHigh
+    )
 }
 
 #' @rdname rename_cols
@@ -31,10 +32,11 @@ rename_bayes <- function(df) {
 
 #' @rdname rename_cols
 rename_pools <- function(df) {
-  df %>% rename(
-    `Number of Pools` = NumberOfPools,
-    `Number of Positive Pools` = NumberPositive
-  )
+  df %>%
+    rename(
+      `Number of Pools` = NumberOfPools,
+      `Number of Positive Pools` = NumberPositive
+    )
 }
 
 #' @rdname rename_cols
@@ -130,12 +132,12 @@ per_unit_label <- function(column_names, ptr_mode, per_val) {
     if (ptr_mode %in% c("poolprev", "poolprev_strat")) {
       labs_to_update <- which(
         new_column_names == "Prevalence (Maximum Likelihood Estimate)"
-        )
+      )
     } else if (ptr_mode %in% c("poolprev_bayes", "poolprev_bayes_strat")) {
       labs_to_update <- which(
         new_column_names == "Prevalence (Maximum Likelihood Estimate)" |
-        new_column_names == "Prevalence (Bayesian)"
-        )
+          new_column_names == "Prevalence (Bayesian)"
+      )
     } else if (ptr_mode %in% c("hierpoolprev", "hierpoolprev_strat")){
       labs_to_update <- which(new_column_names == "Prevalence (Bayesian)")
     }
@@ -194,7 +196,7 @@ dt_display <- function(df, ptr_mode, per_val, digits, per_prev = TRUE) {
   }
   names(df) <- per_unit_label(
     column_names = names(df), ptr_mode = ptr_mode, per_val = per_val
-    )
+  )
   # extract all columns from ICC using clustering variables
   clustering_vars <- gsub(" ICC", "", grep("ICC", names(df), value = TRUE))
   icc_col_inds <- grep(paste(clustering_vars, collapse = "|"), names(df))
