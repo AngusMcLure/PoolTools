@@ -8,14 +8,6 @@ message: >-
   metadata from this file.
 type: software
 authors:
-  - given-names: Angus
-    family-names: McLure
-    affiliation: The Australian National University
-    orcid: 'https://orcid.org/0000-0003-2890-2703'
-  - given-names: Helen
-    family-names: Mayfield
-    orcid: 'https://orcid.org/0000-0003-3462-4324'
-    affiliation: The University of Queensland
   - given-names: Frederick
     family-names: Jaya
     affiliation: The Australian National University
@@ -24,6 +16,18 @@ authors:
     family-names: Selina
     affiliation: The University of Queensland
     orcid: 'https://orcid.org/0000-0002-7776-8419'
+  - given-names: Helen
+    family-names: Mayfield
+    orcid: 'https://orcid.org/0000-0003-3462-4324'
+    affiliation: The University of Queensland
+  - given-names: Caitlin
+    family-names: Cherryh
+    affiliation: The Australian National University
+    orcid: 'https://orcid.org/0000-0001-6146-4376'
+  - given-names: Angus
+    family-names: McLure
+    affiliation: The Australian National University
+    orcid: 'https://orcid.org/0000-0003-2890-2703'
 identifiers:
   - type: url
     value: 'https://github.com/AngusMcLure/PoolTools'
@@ -35,3 +39,4 @@ keywords:
   - R
   - Shiny
   - Pooled testing
+version: v0.1.5

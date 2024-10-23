@@ -18,6 +18,7 @@ appending "%" (N=100) or "per N units" (N != 100) in output data frame
 
 ### Changed
 - Refactored `run_pooltestr()` to use output of `which_pooltestr()` 
+- Added Caitlin Cherryh to citations file
 
 ## [0.1.4] - 2024-07-19
 

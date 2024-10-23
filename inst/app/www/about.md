@@ -32,7 +32,7 @@ PoolTools does not track any user data. Shinyapps.io collects general usage stat
 ## How-to cite PoolTools
 
 General citation for PoolTools:
-> Jaya, F., Ward, S., Mayfield, H., McLure, A., PoolTools [Computer software]. https://github.com/AngusMcLure/PoolTools
+> Jaya, F., Ward, S., Mayfield, H., Cherryh, C., McLure, A., PoolTools [Computer software]. v0.1.5. https://github.com/AngusMcLure/PoolTools
 
 If you used the "Analyse" mode, please cite:
 > McLure, A., O'Neill, B., Mayfield, H., Lau, C. and McPherson, B., 2021. PoolTestR: An R package for estimating prevalence and regression modelling for molecular xenomonitoring and other applications with pooled samples. _Environmental Modelling & Software_, _145_, p.105158.
@@ -59,4 +59,5 @@ We are very thankful for the survey respondents and workshop participants for he
 [Frederick Jaya](https://orcid.org/0000-0002-4019-7026) - Creator, author, testing, and documentation  
 [Selina Ward](https://orcid.org/0000-0002-7776-8419) - Testing and documentation  
 [Helen Mayfield](https://orcid.org/0000-0003-3462-4324) - End-user engagement  
-[Angus McLure](https://orcid.org/0000-0003-2890-2703) - Project lead  
+[Caitlin Cherryh](https://orcid.org/0000-0001-6146-4376) - Development, testing and documentation
+[Angus McLure](https://orcid.org/0000-0003-2890-2703) - Project lead
