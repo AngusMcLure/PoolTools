@@ -62,7 +62,7 @@
     },
     "Matrix": {
       "Package": "Matrix",
-      "Version": "1.7-0",
+      "Version": "1.7-1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -75,7 +75,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "1920b2f11133b12350024297d8a4ff4a"
+      "Hash": "5122bb14d8736372411f955e1b16bc8a"
     },
     "PKI": {
       "Package": "PKI",
@@ -93,11 +93,11 @@
       "Version": "0.2.0",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "AngusMcLure",
       "RemoteRepo": "PoolPoweR",
       "RemoteRef": "main",
-      "RemoteSha": "ac8cf2e3c136699c118a8d9d84acf951c4832622",
+      "RemoteSha": "d3a677d521de82fbbe99b6eeae5c88023c2b4c6a",
+      "RemoteHost": "api.github.com",
       "Requirements": [
         "distributions3",
         "dplyr",
@@ -105,18 +105,18 @@
         "hypergeo",
         "purrr"
       ],
-      "Hash": "f67234de2cfc5f3569cb7767c7242b29"
+      "Hash": "0594aac982308886196feaae764f15cb"
     },
     "PoolTestR": {
       "Package": "PoolTestR",
       "Version": "0.2.0",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "AngusMcLure",
       "RemoteRepo": "PoolTestR",
       "RemoteRef": "ICC",
-      "RemoteSha": "ddef3874bec00ec1760564d53046e673bac28084",
+      "RemoteSha": "03fc231d248f725447ba769ff000adcc8360cdf9",
+      "RemoteHost": "api.github.com",
       "Requirements": [
         "BH",
         "R",
@@ -134,7 +134,7 @@
         "stats",
         "stringr"
       ],
-      "Hash": "7eb9daefc2cb51eb10f47154a6bf6214"
+      "Hash": "95cb039f7aea12550a71835a73cd37a9"
     },
     "QuickJSR": {
       "Package": "QuickJSR",
@@ -846,7 +846,7 @@
     },
     "gert": {
       "Package": "gert",
-      "Version": "2.1.2",
+      "Version": "2.1.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -857,7 +857,7 @@
         "sys",
         "zip"
       ],
-      "Hash": "347d104ed332650b737f509a703c9c7f"
+      "Hash": "ae855ad6d7be20dd7b05d43d25700398"
     },
     "ggplot2": {
       "Package": "ggplot2",
@@ -1791,13 +1791,13 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "1.0.10",
+      "Version": "1.0.11",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "utils"
       ],
-      "Hash": "d0387d5687ec933dd7587efd4cfa2d85"
+      "Hash": "47623f66b4e80b3b0587bc5d7b309888"
     },
     "reshape2": {
       "Package": "reshape2",
@@ -1944,10 +1944,10 @@
     },
     "rstudioapi": {
       "Package": "rstudioapi",
-      "Version": "0.16.0",
+      "Version": "0.17.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "96710351d642b70e8f02ddeb237c46a7"
+      "Hash": "5f90cd73946d706cfe26024294236113"
     },
     "rversions": {
       "Package": "rversions",
