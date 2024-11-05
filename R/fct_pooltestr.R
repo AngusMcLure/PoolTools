@@ -106,6 +106,7 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     # Account for hierarchical sampling structure
     hier_args <- req_args
     hier_args$hierarchy <- hier_vars
+    hier_args$all.negative.pools <- 'zero'
     if (pooltestr_mode == "hierpoolprev_strat") {
       # Prepare hierarchical input for:
       #   6. HierPoolPrev (Stratified)
