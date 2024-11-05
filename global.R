@@ -1,9 +1,9 @@
-# Install PoolTestR: r-universe dev version
+# # Install PoolTestR: r-universe dev version
 # options(repos = c(
 #   CRAN = "https://cloud.r-project.org",
 #   angusmclure = "https://angusmclure.r-universe.dev"
 # ))
-# install.packages("PoolTestR")
+# install.packages("PoolTestR", repos = c("https://angusmclure.r-universe.dev"))
 
 # Install PoolPoweR: github dev version
 # devtools::install_github("AngusMcLure/PoolPoweR")
