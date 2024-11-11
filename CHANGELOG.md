@@ -14,7 +14,9 @@ and this project adheres to
 - `PoolTools` output now includes formatted ICC columns
 - Updated prevalence columns names to explicitly state prevalence per units by
 appending "%" (N=100) or "per N units" (N != 100) in output data frame
-  - ICC columns are not multiplied by N
+- ICC columns reported as value between 0 and 1 (i.e., are not multiplied by N)
+- Set parameter for PoolTools HierPoolPrev calls (i.e., any PoolTools analyses
+using hierarchical/clustered sampling) to use `all.negative.pools = 'zero'`
 
 ### Changed
 - Refactored `run_pooltestr()` to use output of `which_pooltestr()` 
@@ -29,8 +31,8 @@ resetting when UI does.
 
 ### Changed
 - Design inputs do not reset when upstream settings are changed for:
-    - Fixed sample size  
-	- Fixed sampling period  
+- Fixed sample size  
+- Fixed sampling period  
 - Design back-end overhaul; UI and values are decoupled.  
 - Renaming cluster/hierarchical sampling in UI.  
 
