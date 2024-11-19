@@ -1,4 +1,5 @@
 # # Install PoolTestR: r-universe dev version
+# # To list repos in current session: getOption("repos")
 # options(repos = c(
 #   CRAN = "https://cloud.r-project.org",
 #   angusmclure = "https://angusmclure.r-universe.dev"
