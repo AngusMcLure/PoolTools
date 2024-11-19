@@ -13,10 +13,17 @@ renv::snapshot()
 ```
 
 ## Installing Pool-Box programs
+To make sure the renv lockfile includes both `CRAN` and `angusmclure` as 
+Repositories, update the global options:
+```
+
+options(repos = c(CRAN = "https://cloud.r-project.org",
+                   angusmclure = "https://angusmclure.r-universe.dev") )
+```
+
+To install PoolTestR and PoolPoweR:
 ```
 # Install PoolTestR from R-universe
-options( repos = c(CRAN = "https://cloud.r-project.org",
-                   angusmclure = "https://angusmclure.r-universe.dev") )
 renv::install("PoolTestR", repos = c("https://angusmclure.r-universe.dev") )
 
 # Install PoolPoweR: github dev version
