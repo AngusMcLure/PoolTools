@@ -74,6 +74,10 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     } else if (pooltestr_mode == "poolprev_bayes" | pooltestr_mode == "poolprev_bayes_strat") {
       poolprev_args$bayesian <- TRUE
     }
+    # Set function arguments for HierPoolPrev call
+    poolprev_args$robust <- TRUE
+    poolprev_args$all.negative.pools <- 'zero'
+    poolprev_args$level <- 0.95
     # Run PoolTestR and format output
     if (pooltestr_mode == "poolprev" | pooltestr_mode == "poolprev_bayes") {
       # Run PoolTestR (estimate prevalence on whole data) for:
@@ -89,6 +93,7 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
       #     2. PoolPrev (Stratified)
       #     4. PoolPrev (Bayesian, Stratified)
       col_args <- c(poolprev_args, lapply(stratify_vars, as.name))
+      print(col_args)
       data <-
         do.call(PoolTestR::PoolPrev, col_args) %>%
         as_tibble() %>%
@@ -106,12 +111,15 @@ run_pooltestr <- function(pooltestr_mode, req_args, hier_vars, stratify_vars) {
     # Account for hierarchical sampling structure
     hier_args <- req_args
     hier_args$hierarchy <- hier_vars
-    hier_args$all.negative.pools <- 'zero'
     if (pooltestr_mode == "hierpoolprev_strat") {
       # Prepare hierarchical input for:
       #   6. HierPoolPrev (Stratified)
       hier_args <- c(hier_args, lapply(stratify_vars, as.name))
     }
+    # Set function arguments for HierPoolPrev call
+    hier_args$robust <- TRUE
+    hier_args$all.negative.pools <- 'zero'
+    hier_args$level <- 0.95
     # Run PoolTestR for:
     #     5. HierPoolPrev (Unstrat.)
     #     6. HierPoolPrev (Strat.)

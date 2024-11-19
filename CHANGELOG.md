@@ -9,16 +9,19 @@ and this project adheres to
 ## [0.1.5] - 2024-10-18
 
 ### Added  
-- `ICC` branch added and used to create v0.1.5
-- Updated to use `PoolTestR@ICC` version (includes ICC columns)
 - `PoolTools` output now includes formatted ICC columns
+  - ICC columns reported as value between 0 and 1 (i.e., are not multiplied by N)
 - Updated prevalence columns names to explicitly state prevalence per units by
 appending "%" (N=100) or "per N units" (N != 100) in output data frame
-- ICC columns reported as value between 0 and 1 (i.e., are not multiplied by N)
-- Set parameter for PoolTools HierPoolPrev calls (i.e., any PoolTools analyses
-using hierarchical/clustered sampling) to use `all.negative.pools = 'zero'`
+- Updating default parameters for Analysis tab
+    - Set parameter for PoolPrev calls to use `all.negative.pools = 'zero'`
+    - Set parameter for HierPoolPrev calls (i.e., any PoolTools analyses using 
+    hierarchical/clustered sampling) to use `all.negative.pools = 'zero'`
+    - Set parameter for PoolPrev calls to use `robust = TRUE`
+    - Set parameter for HierPoolPrev calls to use `robust = TRUE`
 
 ### Changed
+- PoolTestR version updated to include improvements from ICC and betterpointestimate branches
 - Refactored `run_pooltestr()` to use output of `which_pooltestr()` 
 - Added Caitlin Cherryh to citations file
 
