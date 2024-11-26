@@ -1,7 +1,8 @@
-# Developer checklist  
+# Developer notes  
 
 ## Managing the renv environment
-```
+
+```R
 # Creating the environment
 renv::init()
 # Check status of environment
@@ -15,14 +16,15 @@ renv::snapshot()
 ## Installing Pool-Box programs
 To make sure the renv lockfile includes both `CRAN` and `angusmclure` as 
 Repositories, update the global options:
-```
 
+```R
 options(repos = c(CRAN = "https://cloud.r-project.org",
                    angusmclure = "https://angusmclure.r-universe.dev") )
 ```
 
 To install PoolTestR and PoolPoweR:
-```
+
+```R
 # Install PoolTestR from R-universe
 renv::install("PoolTestR", repos = c("https://angusmclure.r-universe.dev") )
 
@@ -31,10 +33,24 @@ devtools::install_github("AngusMcLure/PoolPoweR")
 ```
 
 # Developer checklist
+## Specifying credentials
+
+Install `rsconnect`:
+
+```R
+install.packages('rsconnect')
+```
+
+Authorise the account using the information from shinyapps.io:
+
+```R
+rsconnect::setAccountInfo(name = "", token = "", secret = "")
+```
+
 ## Pre-push  
 
 Optional linting:  
-```r
+```R
 styler::style_dir(".")  
 ``` 
 
@@ -54,7 +70,7 @@ Update the documentation (currently GH wiki):
 ## Deployment  
 
 Deploying the app to shinyapps.io:  
-```r
+```R
 rsconnect::deployApp()  
 ```
 
