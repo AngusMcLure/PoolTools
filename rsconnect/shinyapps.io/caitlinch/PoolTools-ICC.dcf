@@ -1,0 +1,12 @@
+name: PoolTools-ICC
+title: PoolTools-ICC
+username: caitlinch
+account: caitlinch
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13056250
+bundleId: 9418518
+url: https://caitlinch.shinyapps.io/PoolTools-ICC/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
