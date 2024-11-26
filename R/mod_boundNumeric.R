@@ -27,8 +27,11 @@ boundNumericInput <- function(r_store, id, label, ...) {
 saveNumericInput <- function(id, r_store) {
   # TODO: switch args positions to be consistent with UI
   moduleServer(id, function(input, output, session) {
-    observeEvent(input$value, {
-      r_store[[id]] <- as.numeric(input$value)
-    }, ignoreNULL = TRUE)
+    observeEvent(input$value,
+      {
+        r_store[[id]] <- as.numeric(input$value)
+      },
+      ignoreNULL = TRUE
+    )
   })
 }

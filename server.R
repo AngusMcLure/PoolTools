@@ -134,7 +134,7 @@ server <- function(input, output, session) {
     if (!is.null(input$optsHierarchy) && input$optsHierarchy) {
       tagList(
         bucket_list(
-          header = "Drag to select variables. Reorder variables from the largest to smallest sampling area (e.g. province > village > hosuehold.)",
+          header = "Drag to select variables. Reorder variables from the largest to smallest sampling area (e.g. province > village > household.)",
           orientation = "horizontal", # doesn't work in sidebar?
           add_rank_list(
             text = "Hierarchical variables",
@@ -154,7 +154,10 @@ server <- function(input, output, session) {
   output$validHierarchy <- renderText({
     req(input$optsHierarchy)
     validate(
-      need(length(input$optsHierarchyOrder) >= 2, "You must select and order at least 2 strata")
+      need(
+        length(input$optsHierarchyOrder) >= 2,
+        "You must select and order at least 2 strata"
+      )
     )
   })
 
@@ -230,13 +233,11 @@ server <- function(input, output, session) {
       result = input$colTestResults,
       poolSize = input$colUnitNumber
     )
-
-    ptr_mode <- which_pooltestr(input$optsStratify, input$optsHierarchy, input$optsBayesian)
-
-    # TODO: Refactor so it uses `ptr_mode`
+    ptr_mode <- which_pooltestr(
+      input$optsStratify, input$optsHierarchy, input$optsBayesian
+    )
     out <- run_pooltestr(
-      req_args, input$optsStratify, input$optsHierarchy, input$optsHierarchyOrder,
-      input$optsBayesian, input$optsColStratify
+      ptr_mode, req_args, input$optsHierarchyOrder, input$optsColStratify
     )
     shinybusy::remove_modal_spinner()
     list(df = out, mode = ptr_mode)
@@ -255,6 +256,7 @@ server <- function(input, output, session) {
   })
 
   output$outAnalyse <- renderDataTable({
+    # Output the formatted data frame
     req(formatted_out())
     datatable(formatted_out(), rownames = F)
   })
@@ -296,7 +298,7 @@ server <- function(input, output, session) {
   analysis_type <- reactive({
     req(survey_exists())
     if (input$optsObjective == "Estimate prevalence" &
-        input$optsMode == "Identify cost-effective designs") {
+      input$optsMode == "Identify cost-effective designs") {
       if (input$optsTrapping == "Fixed sample size") {
         return("optimise_sN_prevalence")
       } else if (input$optsTrapping == "Fixed sampling period") {
@@ -343,17 +345,26 @@ server <- function(input, output, session) {
 
   # observeEvent to update the correpsonding reactiveValues when changed in the
   # UI.
-  observeEvent(input$optsPoolStrat, {
-    design_opts$pool_strat <- input$optsPoolStrat
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsPoolStrat,
+    {
+      design_opts$pool_strat <- input$optsPoolStrat
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$CatchMean, {
-    random_prev$catch_mean <- as.numeric(input$optsCatchMean)
-  }, ignoreNULL = TRUE)
+  observeEvent(input$CatchMean,
+    {
+      random_prev$catch_mean <- as.numeric(input$optsCatchMean)
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsCatchVar, {
-    design_opts$catch_var <- as.numeric(input$optsCatchVar)
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsCatchVar,
+    {
+      design_opts$catch_var <- as.numeric(input$optsCatchVar)
+    },
+    ignoreNULL = TRUE
+  )
 
   ### Validation UI ----
   output$validCatch <- renderText({
@@ -556,13 +567,19 @@ server <- function(input, output, session) {
   )
 
   # Corresponding data updaters for design_opts() storage
-  observeEvent(input$optsPrevalence, {
-    design_opts$prev <- processOther(input, "optsPrevalence")
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsPrevalence,
+    {
+      design_opts$prev <- processOther(input, "optsPrevalence")
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsCorrelation, {
-    design_opts$rho <- processOther(input, "optsCorrelation")
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsCorrelation,
+    {
+      design_opts$rho <- processOther(input, "optsCorrelation")
+    },
+    ignoreNULL = TRUE
+  )
 
   ## Advanced settings ----
   # Contains additional parameters hidden by default
@@ -570,27 +587,42 @@ server <- function(input, output, session) {
   # things should be sampled by PoolPoweR functions.
 
   ### Server ----
-  observeEvent(input$optsSensitivity, {
-    # processOther divides by 100
+  observeEvent(input$optsSensitivity,
+    {
+      # processOther divides by 100
       design_opts$sens <- processOther(input, "optsSensitivity")
-  }, ignoreNULL = TRUE)
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsSpecificity, {
-    # processOther divides by 100
-    design_opts$spec <- processOther(input, "optsSpecificity")
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsSpecificity,
+    {
+      # processOther divides by 100
+      design_opts$spec <- processOther(input, "optsSpecificity")
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsMaxPeriod, {
-    design_opts$max_period <- as.numeric(input$optsMaxPeriod)
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsMaxPeriod,
+    {
+      design_opts$max_period <- as.numeric(input$optsMaxPeriod)
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsMaxS, {
-    design_opts$max_s <- as.numeric(input$optsMaxS)
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsMaxS,
+    {
+      design_opts$max_s <- as.numeric(input$optsMaxS)
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsMaxN, {
-    design_opts$max_N <- as.numeric(input$optsMaxN)
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsMaxN,
+    {
+      design_opts$max_N <- as.numeric(input$optsMaxN)
+    },
+    ignoreNULL = TRUE
+  )
 
   ### UI ----
   output$uiDesignAdv <- renderUI({
@@ -664,15 +696,21 @@ server <- function(input, output, session) {
     max_N = 20
   )
 
-  observeEvent(input$optsSensitivity, {
-    # processOther divides by 100
+  observeEvent(input$optsSensitivity,
+    {
+      # processOther divides by 100
       design_opts$sens <- processOther(input, "optsSensitivity")
-  }, ignoreNULL = TRUE)
+    },
+    ignoreNULL = TRUE
+  )
 
-  observeEvent(input$optsSpecificity, {
-    # processOther divides by 100
-    design_opts$spec <- processOther(input, "optsSpecificity")
-  }, ignoreNULL = TRUE)
+  observeEvent(input$optsSpecificity,
+    {
+      # processOther divides by 100
+      design_opts$spec <- processOther(input, "optsSpecificity")
+    },
+    ignoreNULL = TRUE
+  )
 
   saveNumericInput("max_period", random_opts)
   saveNumericInput("max_s", sN_opts)

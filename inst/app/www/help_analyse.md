@@ -18,5 +18,12 @@ Supplementary information on clustering/hierarchy survey design and analysis.
 
 - [Hierarchical sampling structure](https://github.com/AngusMcLure/PoolTools/wiki/Hierarchical-sampling-structure) 
 
+### Statistical assumptions
+
+Explanation of default parameter values and the statistical assumptions underlying PoolTools.
+
+- [Statistical assumptions and default values](https://github.com/AngusMcLure/PoolTools/wiki/Statistical-assumptions-and-default-values)
+
+---
 
 *More documentation to come...*  

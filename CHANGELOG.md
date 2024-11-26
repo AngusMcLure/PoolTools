@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  
 
+## [0.1.5] - 2024-10-18
+
+### Added  
+- `PoolTools` output now includes formatted ICC columns
+  - ICC columns reported as value between 0 and 1 (i.e., are not multiplied by N)
+- Updated prevalence columns names to explicitly state prevalence per units by
+appending "%" (N=100) or "per N units" (N != 100) in output data frame
+- Updating default parameters for Analysis tab
+    - Set parameter for PoolPrev calls to use `all.negative.pools = 'zero'`
+    - Set parameter for HierPoolPrev calls (i.e., any PoolTools analyses using 
+    hierarchical/clustered sampling) to use `all.negative.pools = 'zero'`
+    - Set parameter for PoolPrev calls to use `robust = TRUE`
+    - Set parameter for HierPoolPrev calls to use `robust = TRUE`
+
+### Changed
+- PoolTestR version updated to include improvements from ICC and betterpointestimate branches
+- Refactored `run_pooltestr()` to use output of `which_pooltestr()` 
+- Added Caitlin Cherryh to citations file
+
 ## [0.1.4] - 2024-07-19
 
 ### Added  
@@ -15,8 +34,8 @@ resetting when UI does.
 
 ### Changed
 - Design inputs do not reset when upstream settings are changed for:
-    - Fixed sample size  
-	- Fixed sampling period  
+- Fixed sample size  
+- Fixed sampling period  
 - Design back-end overhaul; UI and values are decoupled.  
 - Renaming cluster/hierarchical sampling in UI.  
 
