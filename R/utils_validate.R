@@ -40,7 +40,7 @@ in_range <- function(input = input, inputId, range, inc_lower) {
 
 ## fileAnalyse column checks
 is_binary_col <- function(df, col) {
-  all(unique(df[[col]]) == c(0, 1))
+  all(unique(df[[col]]) %in% c(0, 1))
 }
 
 is_integer_col <- function(df, col) {
