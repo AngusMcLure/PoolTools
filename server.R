@@ -188,7 +188,7 @@ server <- function(input, output, session) {
     if (!is.null(input$optsHierarchy) && input$optsHierarchy) {
       tagList(
         bucket_list(
-          header = "Drag to select variables. Reorder variables from the largest to smallest sampling area (e.g. province > village > household.)",
+          header = "Drag to select variables. If adjusting for more than level of sampling hierarchy, order variables from the largest to smallest sampling area (e.g. province > village > household).",
           orientation = "horizontal", # doesn't work in sidebar?
           add_rank_list(
             text = "Hierarchical variables",
