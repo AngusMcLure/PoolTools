@@ -1,0 +1,12 @@
+name: PoolTools_Test
+title: PoolTools_Test
+username: poolbox
+account: poolbox
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15157401
+bundleId: 10723078
+url: https://poolbox.shinyapps.io/PoolTools_Test/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
