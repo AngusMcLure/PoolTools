@@ -25,18 +25,33 @@ server <- function(input, output, session) {
     # Reset downstream UI-dependent inputs whenever data input is updated
     updateSelectInput(session, "colTestResults", selected = "")
     updateSelectInput(session, "colUnitNumber", selected = "")
-    updateCheckboxInput(session, "optsStratify", value = TRUE)
+    updateCheckboxInput(session, "optsStratify", value = FALSE)
     updateCheckboxGroupInput(session, "optsColStratify", selected = character(0))
     updateCheckboxInput(session, "optsHierarchy", value = FALSE)
     # You may also want to reset the bucket lists if needed
   })
 
 
-  metadata_cols <- reactive({
+  stratify_cols_options <- reactive({
     # All column names that are not the results or unit number per pool
     req(colselect_valid())
     cols <- names(data())
     cols <- cols[!cols %in% c(input$colTestResults, input$colUnitNumber)]
+  })
+
+  hierarchy_col_options <- reactive({
+    # All column names that are not the results or unit number per pool
+    req(stratify_valid())
+    cols <- names(data())
+    cols <- cols[!cols %in% c(input$colTestResults, input$colUnitNumber, input$optsColStratify)]
+  })
+
+  stratify_col_options_nonzero <- reactive({
+    length(stratify_cols_options()) > 0
+  })
+
+  hierarchy_col_options_nonzero <- reactive({
+    length(hierarchy_col_options()) > 0
   })
 
   ## State reactives
@@ -56,13 +71,35 @@ server <- function(input, output, session) {
   })
 
   stratify_valid <- reactive({
-    req(colselect_exists(), !is.null(input$optsStratify))
-    (!input$optsStratify || !is.null(input$optsColStratify))
+    req(colselect_exists())
+    if(stratify_col_options_nonzero()){
+      req(!is.null(input$optsStratify))
+      (!input$optsStratify || !is.null(input$optsColStratify))
+    }else{
+      TRUE
+    }
   })
 
   hierarchy_valid <- reactive({
-    req(stratify_valid(), !is.null(input$optsHierarchy))
-    (!input$optsHierarchy || (length(input$optsHierarchyOrder) >= 2))
+    req(stratify_valid())
+    return(TRUE)
+    if(hierarchy_col_options_nonzero()){
+      req(!is.null(input$optsHierarchy))
+      (!input$optsHierarchy || (length(input$optsHierarchyOrder) >= 1))
+    }else{
+      TRUE
+    }
+  })
+
+  #Whether adjusting for hierarchy. If no columns that could be used for
+  #adjusting for hierarchy then TRUE
+  hierarchy_none <- reactive({
+    if(hierarchy_col_options_nonzero()){
+      req(!is.null(input$optsHierarchy))
+      !input$optsHierarchy
+    }else{
+      TRUE
+    }
   })
 
 
@@ -94,13 +131,17 @@ server <- function(input, output, session) {
 
   output$checkStratify <- renderUI({
     req(colselect_valid())
-    tagList(
-      tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInputTT("optsStratify", "Stratify data?",
-        tooltip = "Check box to calculate prevalence estimates for multiple strata within the dataset. Uncheck to calculate a single prevalence estimate for the whole dataset",
-        value = T
+    if(stratify_col_options_nonzero()){
+      tagList(
+        tags$hr(style = "border-top: 1px solid #CCC;"),
+        checkboxInputTT("optsStratify", "Stratify data?",
+                        tooltip = "Check box to calculate prevalence estimates for multiple strata within the dataset. Uncheck to calculate a single prevalence estimate for the whole dataset",
+                        value = FALSE
+        )
       )
-    )
+    }else{
+      return(NULL)
+    }
   })
 
   output$colSelectStratify <- renderUI({
@@ -110,7 +151,7 @@ server <- function(input, output, session) {
         checkboxGroupInput(
           "optsColStratify",
           tags$span("Select columns from your data to stratify data by:", style = "font-weight: plain;"), # plan text instead of bold
-          choices = metadata_cols()
+          choices = stratify_cols_options()
         ),
         textOutput("validStratify")
       )
@@ -133,12 +174,14 @@ server <- function(input, output, session) {
   output$checkHierarchy <- renderUI({
     # Although the options don't change, reveal only when file is uploaded
     req(stratify_valid())
-    tagList(
-      tags$hr(style = "border-top: 1px solid #CCC;"),
-      checkboxInputTT("optsHierarchy", "Cluster/hierarchical sampling?",
-        tooltip = "Apply a hierarchical model to minimise overestimating confidence/credible intervals", value = FALSE
+    if(hierarchy_col_options_nonzero()){
+      tagList(
+        tags$hr(style = "border-top: 1px solid #CCC;"),
+        checkboxInputTT("optsHierarchy", "Cluster/hierarchical sampling?",
+                        tooltip = "Adjust estimates and intervals for cluster or hierarchical sampling", value = FALSE
+        )
       )
-    )
+    }
   })
   output$colHierarchyOrder <- renderUI({
     req(stratify_valid())
@@ -154,7 +197,7 @@ server <- function(input, output, session) {
           add_rank_list(
             text = "Other variables",
             input_id = "_optsHierarchyExclude",
-            labels = metadata_cols()
+            labels = hierarchy_col_options()
           )
         ),
         textOutput("validHierarchy")
@@ -166,8 +209,8 @@ server <- function(input, output, session) {
     req(input$optsHierarchy)
     validate(
       need(
-        length(input$optsHierarchyOrder) >= 2,
-        "You must select and order at least 2 strata"
+        length(input$optsHierarchyOrder) >= 1,
+        "You must select and order at least 1 strata"
       )
     )
   })
@@ -206,6 +249,12 @@ server <- function(input, output, session) {
     )
   })
 
+  output$hierarchyNone <- reactive({
+    hierarchy_none()
+  })
+  outputOptions(output, "hierarchyNone", suspendWhenHidden = FALSE)
+
+
   output$uiAnalyseAdv <- renderUI({
     req(hierarchy_valid())
     tagList(
@@ -215,7 +264,7 @@ server <- function(input, output, session) {
 
         # Run bayesian analysis with PoolPrev
         conditionalPanel(
-          condition = "input.optsHierarchy == false",
+          condition = "output.hierarchyNone",
           checkboxInput("optsBayesian", "Bayesian calculations (slow)")
         )
       ),

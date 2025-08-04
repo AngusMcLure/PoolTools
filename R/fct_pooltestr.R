@@ -22,6 +22,9 @@
 #'
 #' @return character String indicating mode used
 which_pooltestr <- function(stratify, hierarchy, bayesian) {
+  if(is.null(stratify))  stratify  <- FALSE
+  if(is.null(hierarchy)) hierarchy <- FALSE
+
   if (hierarchy) { # HierPoolPrev
     if (stratify) {
       # 6. Hierarchical and Stratified
