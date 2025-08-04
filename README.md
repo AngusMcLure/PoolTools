@@ -4,7 +4,7 @@ Analyse and design surveys with pool-tested data: a Shiny interface to
 [PoolTestR](https://github.com/AngusMcLure/PoolTestR) 
 and [PoolPoweR](https://github.com/AngusMcLure/PoolPoweR).
 
-The latest version of PoolTools (v0.1.5) is available as a web app here: https://poolbox.shinyapps.io/PoolTools/
+The latest version of PoolTools (v0.1.6) is available as a web app here: https://poolbox.shinyapps.io/PoolTools/
 
 PoolTools is documented via the [PoolTools wiki](https://github.com/AngusMcLure/PoolTools/wiki). 
 
