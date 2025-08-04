@@ -21,6 +21,17 @@ server <- function(input, output, session) {
     )
   })
 
+  observeEvent(input$fileAnalyse, {
+    # Reset downstream UI-dependent inputs whenever data input is updated
+    updateSelectInput(session, "colTestResults", selected = "")
+    updateSelectInput(session, "colUnitNumber", selected = "")
+    updateCheckboxInput(session, "optsStratify", value = TRUE)
+    updateCheckboxGroupInput(session, "optsColStratify", selected = character(0))
+    updateCheckboxInput(session, "optsHierarchy", value = FALSE)
+    # You may also want to reset the bucket lists if needed
+  })
+
+
   metadata_cols <- reactive({
     # All column names that are not the results or unit number per pool
     req(colselect_valid())
